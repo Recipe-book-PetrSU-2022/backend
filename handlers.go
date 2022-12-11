@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -92,10 +93,6 @@ func (server *Server) SignInHandle(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Пароль пользователя не может быть пустым"})
 	}
 
-	// if user_data.Password != user_data.ConfirmPassword {
-	// 	return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Пароли должны совпадать"})
-	// }
-
 	// Прошли все проверки
 
 	var user models.User
@@ -128,7 +125,67 @@ func (server *Server) SignInHandle(c echo.Context) error {
 	return c.JSON(http.StatusOK, &TokenResponse{Message: "Пользователь успешно вошёл в систему!", Token: token_string})
 }
 
-func (server *Server) ProfileHandle(c echo.Context) error {
+func (server *Server) GetUserByClaims(c echo.Context) (*models.User, error) {
+	user_token := c.Get("user").(*jwt.Token)
+	user_claims := user_token.Claims.(*claims.UserClaims)
 
+	var user models.User
+
+	err := server.DB.First(&user, "id = ?", user_claims.IntUserId).Error
+	if err != nil {
+		return nil, errors.New("Пользователь не найден")
+	}
+
+	return &user, nil
+}
+
+func (server *Server) ProfileHandle(c echo.Context) error {
+	user, err := server.GetUserByClaims(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Пользователь не найден"})
+	}
+
+	response := &ProfileResponse{Message: "Удачный вход на страницу профиля", Id: user.ID, Username: user.StrUserName, Email: user.StrUserEmail, ProfilePhoto: user.StrUserImage}
+
+	return c.JSON(http.StatusOK, response)
+}
+
+func (server *Server) ChangeProfileHandle(c echo.Context) error {
+	return nil
+}
+
+func (server *Server) DeleteProfileHandle(c echo.Context) error {
+	return nil
+}
+
+func (server *Server) CreateRecipeHandle(c echo.Context) error {
+	return nil
+}
+
+func (server *Server) GetRecipeHandle(c echo.Context) error {
+	return nil
+}
+
+func (server *Server) GetRecipesHandle(c echo.Context) error {
+	return nil
+}
+
+func (server *Server) UpdateRecipeHandle(c echo.Context) error {
+	return nil
+}
+
+func (server *Server) DeleteRecipeHandle(c echo.Context) error {
+	return nil
+}
+
+func (server *Server) FindRecipesHandle(c echo.Context) error {
+	return nil
+}
+
+func (server *Server) AddRecipeToFavoritesHandle(c echo.Context) error {
+	return nil
+}
+
+func (server *Server) RemoveRecipeFromFavoritesHandle(c echo.Context) error {
 	return nil
 }

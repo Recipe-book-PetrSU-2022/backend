@@ -63,9 +63,23 @@ func (server *Server) Run() error {
 
 	jwtMiddleware := middleware.JWTWithConfig(config)
 
-	server.E.GET("/profile", server.ProfileHandle, jwtMiddleware)
+	recipe_group := server.E.Group("/recipe", jwtMiddleware)
+	profile_group := server.E.Group("/profile", jwtMiddleware)
+
 	server.E.POST("/signin", server.SignInHandle)
 	server.E.POST("/signup", server.SignUpHandle)
+
+	profile_group.GET("", server.ProfileHandle)
+	profile_group.GET("/update", server.ChangeProfileHandle)
+	profile_group.GET("/delete", server.DeleteProfileHandle)
+
+	recipe_group.POST("/add", server.CreateRecipeHandle)
+	recipe_group.GET("/:id", server.GetRecipeHandle)
+	recipe_group.POST("/change/:id", server.UpdateRecipeHandle)
+	recipe_group.POST("/delete/:id", server.DeleteRecipeHandle)
+
+	recipe_group.GET("/all", server.GetRecipesHandle)
+	recipe_group.GET("/find", server.FindRecipesHandle)
 
 	return server.E.Start(fmt.Sprintf("%s:%d", server.Host, server.Port))
 }
