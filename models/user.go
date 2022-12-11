@@ -7,7 +7,7 @@ type User struct {
 
 	StrUserName     string    `gorm:"index;unique;not null"`
 	StrUserPassword string    `gorm:"not null"`
-	StrUserEmail    string    `gorm:"index;not null"`
+	StrUserEmail    string    `gorm:"index;unique;not null"`
 	IntUserRights   int       `gorm:"not null;default:0"`
 	UserRecipes     []Recipe  `gorm:"foreignKey:IntUserId"`
 	UserComments    []Comment `gorm:"foreignKey:IntUserId"`
