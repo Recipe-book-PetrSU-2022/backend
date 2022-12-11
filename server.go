@@ -50,6 +50,8 @@ func (server *Server) Run() error {
 		return err
 	}
 
+	server.e.POST("/signup", server.RegisterHandle)
+
 	return server.e.Start(fmt.Sprintf("%s:%d", server.Host, server.Port))
 }
 
