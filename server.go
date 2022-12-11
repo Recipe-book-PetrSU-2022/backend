@@ -7,8 +7,10 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
+	"github.com/Recipe-book-PetrSU-2022/backend/claims"
 	"github.com/Recipe-book-PetrSU-2022/backend/models"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
 // Структура сервера
@@ -22,9 +24,10 @@ import (
 type Server struct {
 	Host             string     // Хост для запуска
 	Port             int        // Порт для запуска
-	e                *echo.Echo // Echo http-сервер
-	dbConnectionInfo string     // Информация для подключения
-	db               *gorm.DB   // Объект ORM
+	E                *echo.Echo // Echo http-сервер
+	DBConnectionInfo string     // Информация для подключения
+	DB               *gorm.DB   // Объект ORM
+	TokenKey         []byte
 }
 
 // Функция для поднятия сервера
@@ -35,7 +38,7 @@ func (server *Server) Run() error {
 		return err
 	}
 
-	err = server.db.AutoMigrate(
+	err = server.DB.AutoMigrate(
 		&models.User{},
 		&models.Filter{},
 		&models.Ingredient{},
@@ -50,20 +53,32 @@ func (server *Server) Run() error {
 		return err
 	}
 
-	server.e.POST("/signup", server.RegisterHandle)
+	server.E.Use(middleware.Logger())
+	server.E.Use(middleware.Recover())
 
-	return server.e.Start(fmt.Sprintf("%s:%d", server.Host, server.Port))
+	config := middleware.JWTConfig{
+		Claims:     &claims.UserClaims{},
+		SigningKey: server.TokenKey,
+	}
+
+	jwtMiddleware := middleware.JWTWithConfig(config)
+
+	server.E.GET("/profile", server.ProfileHandle, jwtMiddleware)
+	server.E.POST("/signin", server.SignInHandle)
+	server.E.POST("/signup", server.SignUpHandle)
+
+	return server.E.Start(fmt.Sprintf("%s:%d", server.Host, server.Port))
 }
 
 // Функция для подключения сервера к БД
 func (server *Server) ConnectDB() error {
-	db, err := gorm.Open(mysql.Open(server.dbConnectionInfo), &gorm.Config{})
+	db, err := gorm.Open(mysql.Open(server.DBConnectionInfo), &gorm.Config{})
 
 	if err != nil {
 		return err
 	}
 
-	server.db = db
+	server.DB = db
 
 	return nil
 }
@@ -73,10 +88,11 @@ func main() {
 	e := echo.New()
 
 	server := Server{
-		e:                e,
+		E:                e,
 		Host:             "0.0.0.0",
 		Port:             1337,
-		dbConnectionInfo: "root:my-secret-pw@tcp(127.0.0.1:3306)/recipe_book?charset=utf8mb4&parseTime=True",
+		DBConnectionInfo: "root:my-secret-pw@tcp(127.0.0.1:3306)/recipe_book?charset=utf8mb4&parseTime=True",
+		TokenKey:         []byte("rakabidasta_test_key"),
 	}
 
 	err := server.Run()
