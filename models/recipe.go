@@ -6,7 +6,6 @@ type Recipe struct {
 	gorm.Model
 
 	StrRecipeName     string             `gorm:"index;not null"`
-	IntUserRights     int                `gorm:"not null;default:0"`
 	IntServings       int                `gorm:"not null;default:0"`
 	IntTime           int                `gorm:"not null;default:0"`
 	StrRecipeCountry  string             `gorm:"not null"`
