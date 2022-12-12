@@ -13,22 +13,44 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// Структура ответа для входа и регистрации
+//
+// Переменные структуры:
+//   - Никнейм
+//   - Почта пользователя
+//   - Пароль
+//   - Пароль для подтверждения
 type UserData struct {
-	Login           string `json:"login"`
-	Email           string `json:"email"`
-	Password        string `json:"password"`
-	ConfirmPassword string `json:"confirm_password"`
+	Login           string `json:"login"`            // Никнейм
+	Email           string `json:"email"`            // Почта
+	Password        string `json:"password"`         // Пароль
+	ConfirmPassword string `json:"confirm_password"` // Подтверждение пароля
 }
 
+// Структура ответа для входа и регистрации
+//
+// Переменные структуры:
+//   - Никнейм
+//   - Почта пользователя
+//   - Текущий пароль
+//   - Пароль
+//   - Пароль для подтверждения
+//   - Фото профиля
 type ChangeUserData struct {
-	Login           string `json:"login"`
-	Email           string `json:"email"`
-	OldPassword     string `json:"old_password"`
-	Password        string `json:"password"`
-	ConfirmPassword string `json:"confirm_password"`
-	Photo           string `json:"photo"`
+	Login           string `json:"login"`            // Никнейм
+	Email           string `json:"email"`            // Почта
+	OldPassword     string `json:"old_password"`     // Текущий пароль
+	Password        string `json:"password"`         // Новый пароль
+	ConfirmPassword string `json:"confirm_password"` // Подтверждение нового пароля
+	Photo           string `json:"photo"`            // Фото профиля
 }
 
+// Функция для регистрации
+//
+// Обрабатывает json с фронтэнда.
+// Проверяет на наличие логина, почты, пароля и подтверждение пароля
+// После прохождения проверок, хэширует пароль, создаёт пользователя
+// и добавляет его в БД
 func (server *Server) SignUpHandle(c echo.Context) error {
 	var user_data UserData
 
@@ -80,6 +102,14 @@ func (server *Server) SignUpHandle(c echo.Context) error {
 	return c.JSON(http.StatusOK, &DefaultResponse{Message: "Пользователь успешно зарегистрирован!"})
 }
 
+// Функция для регистрации
+//
+// Обрабатывает json с фронтэнда.
+// Проверяет на наличие логина, пароля. Вход по почте пока что не сделан
+// После прохождения проверок, ищет пользователя в БД
+// Если пользователь найден, проверяет введенный пароль с сохранённым хэшем
+// Если пароли совпали, то создаётся jwt
+// Пример структуры токена в /claims/user_claims.go
 func (server *Server) SignInHandle(c echo.Context) error {
 	var user_data UserData
 
@@ -134,6 +164,13 @@ func (server *Server) SignInHandle(c echo.Context) error {
 	return c.JSON(http.StatusOK, &TokenResponse{Message: "Пользователь успешно вошёл в систему!", Token: token_string})
 }
 
+// Поиск пользователя в БД
+//
+// Обрабатывает jwt с фронтэнда.
+// Берёт информацию о пользователе из jwt
+// Ищет пользователя в БД по id из jwt
+// Если пользователь найден, то возращает указатель на пользователя
+// Иначе ошибку
 func (server *Server) GetUserByClaims(c echo.Context) (*models.User, error) {
 	user_token := c.Get("user").(*jwt.Token)
 	user_claims := user_token.Claims.(*claims.UserClaims)
@@ -142,12 +179,18 @@ func (server *Server) GetUserByClaims(c echo.Context) (*models.User, error) {
 
 	err := server.DB.First(&user, "id = ?", user_claims.IntUserId).Error
 	if err != nil {
-		return nil, errors.New("Пользователь не найден")
+		return nil, errors.New("пользователь не найден")
 	}
 
 	return &user, nil
 }
 
+// Получение страницы пользователя
+//
+// Обрабатывает jwt с фронтэнда.
+// Ищет пользователя в БД по jwt (GetUserByClaims)
+// Если пользователь найден, то возвращает основную информацию о пользователе
+// Иначе ошибку
 func (server *Server) ProfileHandle(c echo.Context) error {
 	user, err := server.GetUserByClaims(c)
 	if err != nil {
@@ -159,6 +202,14 @@ func (server *Server) ProfileHandle(c echo.Context) error {
 	return c.JSON(http.StatusOK, response)
 }
 
+// Изменение данных о пользователе
+//
+// Обрабатывает jwt и json с фронтэнда.
+// Ищет пользователя в БД по jwt (GetUserByClaims)
+// Если пользователь найден, то возвращает основную информацию о пользователе
+// Иначе ошибку
+// Проверяет на наличие измененных данных
+// Поочередно проверяет логин, почту, пароль
 func (server *Server) ChangeProfileHandle(c echo.Context) error {
 	// Получаем данные о пользователе
 	user, err := server.GetUserByClaims(c)
@@ -178,6 +229,7 @@ func (server *Server) ChangeProfileHandle(c echo.Context) error {
 
 	log.Printf("%+v", user_data)
 
+	// Если пользователь ничего не меняет
 	if len(user_data.Login) != 0 && len(user_data.Email) != 0 && len(user_data.OldPassword) == 0 {
 		return c.JSON(http.StatusOK, &DefaultResponse{Message: "Нечего изменять"})
 	}
@@ -228,6 +280,13 @@ func (server *Server) ChangeProfileHandle(c echo.Context) error {
 	return c.JSON(http.StatusOK, &DefaultResponse{Message: "Пользователь успешно изменил свои данные!"})
 }
 
+// Удаление профиля пользователя
+//
+// Обрабатывает jwt с фронтэнда.
+// Ищет пользователя в БД по jwt (GetUserByClaims)
+// Если пользователь найден, то возвращает основную информацию о пользователе
+// Иначе ошибку
+// Удаляет пользователя
 func (server *Server) DeleteProfileHandle(c echo.Context) error {
 	// Получаем данные о пользователе
 	user, err := server.GetUserByClaims(c)
@@ -238,7 +297,12 @@ func (server *Server) DeleteProfileHandle(c echo.Context) error {
 	}
 
 	// "Удаляем" запись о пользователе
-	server.DB.Delete(&user)
+	err = server.DB.Delete(&user).Error
+
+	// Если не получилось удалить пользователя
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось удалить пользователя"})
+	}
 
 	return c.JSON(http.StatusOK, &DefaultResponse{Message: "Пользователь успешно удалён!"})
 }
