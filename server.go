@@ -78,6 +78,11 @@ func (server *Server) Run() error {
 	recipe_group.POST("/change/:id", server.UpdateRecipeHandle)
 	recipe_group.POST("/delete/:id", server.DeleteRecipeHandle)
 
+	recipe_group.POST("/comment/:id", server.GetCommentHandle)
+	recipe_group.POST("/comments", server.GetCommentsHandle)
+	recipe_group.POST("/comment/:id/add", server.CreateCommentHandle)
+	recipe_group.POST("/comment/:id/delete", server.DeleteCommentHandle)
+
 	recipe_group.GET("/all", server.GetRecipesHandle)
 	recipe_group.GET("/find", server.FindRecipesHandle)
 
