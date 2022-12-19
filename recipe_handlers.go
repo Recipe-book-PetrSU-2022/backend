@@ -41,7 +41,7 @@ func (server *Server) CreateEmptyRecipeHandle(c echo.Context) error {
 	return c.JSON(http.StatusOK, &RecipeResponse{Message: "Создан новый рецепт", Id: recipeID})
 }
 
-func (server *Server) CompleteRecipeHandle(c echo.Context) error {
+func (server *Server) UpdateRecipeHandle(c echo.Context) error {
 	user, err := server.GetUserByClaims(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Не удалось найти пользователя"})
@@ -90,6 +90,70 @@ func (server *Server) CompleteRecipeHandle(c echo.Context) error {
 	return c.JSON(http.StatusOK, &DefaultResponse{Message: "Рецепт обновлен"})
 }
 
+func (server *Server) SetVisibleRecipeHandle(c echo.Context) error {
+	user, err := server.GetUserByClaims(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Не удалось найти пользователя"})
+	}
+
+	recipeID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		log.Printf("Recipe id: %s", err.Error())
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Неверный id рецепта"})
+	}
+
+	recipe, err := server.GetRecipeById(recipeID)
+	if err != nil {
+		log.Printf("Get recipe by id: %s", err.Error())
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
+	}
+
+	if user.ID != recipe.IntUserId {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Рецепт принадлежит другому пользователю"})
+	}
+
+	recipe.BoolRecipeVisibility = true
+
+	err = server.DB.Save(&recipe).Error
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить обновить рецепт: %s", err.Error())})
+	}
+
+	return c.JSON(http.StatusOK, &DefaultResponse{Message: "Рецепт обновлен"})
+}
+
+func (server *Server) SetInvisibleRecipeHandle(c echo.Context) error {
+	user, err := server.GetUserByClaims(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Не удалось найти пользователя"})
+	}
+
+	recipeID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		log.Printf("Recipe id: %s", err.Error())
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Неверный id рецепта"})
+	}
+
+	recipe, err := server.GetRecipeById(recipeID)
+	if err != nil {
+		log.Printf("Get recipe by id: %s", err.Error())
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
+	}
+
+	if user.ID != recipe.IntUserId {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Рецепт принадлежит другому пользователю"})
+	}
+
+	recipe.BoolRecipeVisibility = false
+
+	err = server.DB.Save(&recipe).Error
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить обновить рецепт: %s", err.Error())})
+	}
+
+	return c.JSON(http.StatusOK, &DefaultResponse{Message: "Рецепт обновлен"})
+}
+
 func (server *Server) GetRecipeHandle(c echo.Context) error {
 	recipeIDStr := c.Param("id")
 	recipeID, err := strconv.Atoi(recipeIDStr)
@@ -109,12 +173,20 @@ func (server *Server) GetRecipeHandle(c echo.Context) error {
 }
 
 func (server *Server) GetRecipesHandle(c echo.Context) error {
-	return nil
+	var recipes []models.Recipe
+
+	err := server.DB.Find(&recipes, "bool_recipe_visibility = true").Error
+	if err != nil {
+		log.Printf("Get all recipes: %s", err.Error())
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
+	}
+
+	return c.JSON(http.StatusOK, recipes)
 }
 
-func (server *Server) UpdateRecipeHandle(c echo.Context) error {
-	return nil
-}
+// func (server *Server) UpdateRecipeHandle(c echo.Context) error {
+// 	return nil
+// }
 
 func (server *Server) DeleteRecipeHandle(c echo.Context) error {
 	return nil
