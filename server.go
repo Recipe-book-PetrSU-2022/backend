@@ -75,7 +75,7 @@ func (server *Server) Run() error {
 
 	jwtMiddleware := middleware.JWTWithConfig(config)
 
-	recipe_group := server.E.Group("/recipe", jwtMiddleware)
+	recipe_group := server.E.Group("/recipe")
 	profile_group := server.E.Group("/profile", jwtMiddleware)
 	assets_group := server.E.Group("/assets")
 
@@ -86,19 +86,20 @@ func (server *Server) Run() error {
 	profile_group.GET("/update", server.ChangeProfileHandle)
 	profile_group.GET("/delete", server.DeleteProfileHandle)
 
-	recipe_group.POST("/add", server.CreateEmptyRecipeHandle)
-	recipe_group.POST("/complete/:id", server.UpdateRecipeHandle)
-	recipe_group.POST("/visible/:id", server.ChangeVisibilityRecipeHandle)
-	recipe_group.GET("/:id", server.GetRecipeHandle)
-	recipe_group.POST("/change/:id", server.UpdateRecipeHandle)
-	recipe_group.POST("/delete/:id", server.DeleteRecipeHandle)
-	recipe_group.POST("/upload-cover/:id", server.UploadRecipeCoverHandle)
+	recipe_group.POST("/add", server.CreateEmptyRecipeHandle, jwtMiddleware)
+	recipe_group.POST("/complete/:id", server.UpdateRecipeHandle, jwtMiddleware)
+	recipe_group.POST("/visible/:id", server.ChangeVisibilityRecipeHandle, jwtMiddleware)
+	recipe_group.POST("/change/:id", server.UpdateRecipeHandle, jwtMiddleware)
+	recipe_group.POST("/delete/:id", server.DeleteRecipeHandle, jwtMiddleware)
+	recipe_group.POST("/upload-cover/:id", server.UploadRecipeCoverHandle, jwtMiddleware)
 
-	recipe_group.POST("/comment/:id", server.GetCommentHandle)
+	recipe_group.POST("/comment/:id/add", server.CreateCommentHandle, jwtMiddleware)
+	recipe_group.POST("/comment/:id/delete", server.DeleteCommentHandle, jwtMiddleware)
+
 	recipe_group.POST("/comments", server.GetCommentsHandle)
-	recipe_group.POST("/comment/:id/add", server.CreateCommentHandle)
-	recipe_group.POST("/comment/:id/delete", server.DeleteCommentHandle)
+	recipe_group.POST("/comment/:id", server.GetCommentHandle)
 
+	recipe_group.GET("/:id", server.GetRecipeHandle)
 	recipe_group.GET("/all", server.GetRecipesHandle)
 	recipe_group.GET("/find", server.FindRecipesHandle)
 
