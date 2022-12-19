@@ -87,7 +87,7 @@ func TestSignup(t *testing.T) {
 	}
 }
 
-func TestSignip(t *testing.T) {
+func TestSignin(t *testing.T) {
 
 	reqMap := map[string]interface{}{
 		"login":    "a",
@@ -113,5 +113,33 @@ func TestSignip(t *testing.T) {
 
 		assert.Equal(t, "Пользователь успешно вошёл в систему!", respJson.Message)
 		assert.NotEmpty(t, respJson.Token)
+	}
+}
+
+func TestSigninInvalidCreds(t *testing.T) {
+
+	reqMap := map[string]interface{}{
+		"login":    "a",
+		"password": "b",
+	}
+	reqJson, _ := json.Marshal(reqMap)
+
+	req := httptest.NewRequest(
+		http.MethodPost, "/signin", strings.NewReader(string(reqJson)),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
+	rec := httptest.NewRecorder()
+
+	c := e.NewContext(req, rec)
+
+	if assert.NoError(t, testServer.SignInHandle(c)) {
+		assert.Equal(t, http.StatusBadRequest, rec.Code) // так-то тут должен быть  http.StatusUnauthorized
+
+		respJson := DefaultResponse{}
+		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
+		assert.Nil(t, err)
+
+		assert.Equal(t, "Введены неверные данные", respJson.Message)
 	}
 }
