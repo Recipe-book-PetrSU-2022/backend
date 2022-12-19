@@ -75,7 +75,8 @@ func (server *Server) Run() error {
 
 	jwtMiddleware := middleware.JWTWithConfig(config)
 
-	recipe_group := server.E.Group("/recipe")
+	recipe_group := server.E.Group("/recipe")                        // от лица кого угодно
+	user_recipe_group := server.E.Group("/my-recipe", jwtMiddleware) // от лица владельца
 	profile_group := server.E.Group("/profile", jwtMiddleware)
 	assets_group := server.E.Group("/assets")
 
@@ -86,18 +87,19 @@ func (server *Server) Run() error {
 	profile_group.GET("/update", server.ChangeProfileHandle)
 	profile_group.GET("/delete", server.DeleteProfileHandle)
 
-	recipe_group.POST("/add", server.CreateEmptyRecipeHandle, jwtMiddleware)
-	recipe_group.POST("/complete/:id", server.UpdateRecipeHandle, jwtMiddleware)
-	recipe_group.POST("/visible/:id", server.ChangeVisibilityRecipeHandle, jwtMiddleware)
-	recipe_group.POST("/change/:id", server.UpdateRecipeHandle, jwtMiddleware)
-	recipe_group.POST("/delete/:id", server.DeleteRecipeHandle, jwtMiddleware)
-	recipe_group.POST("/upload-cover/:id", server.UploadRecipeCoverHandle, jwtMiddleware)
+	user_recipe_group.POST("/add", server.CreateEmptyRecipeHandle)
+	user_recipe_group.POST("/complete/:id", server.UpdateRecipeHandle)
+	user_recipe_group.POST("/visible/:id", server.ChangeVisibilityRecipeHandle)
+	user_recipe_group.POST("/change/:id", server.UpdateRecipeHandle)
+	user_recipe_group.POST("/delete/:id", server.DeleteRecipeHandle)
+	user_recipe_group.POST("/upload-cover/:id", server.UploadRecipeCoverHandle)
+	user_recipe_group.GET("/:id", server.GetMyRecipeHandle)
+	user_recipe_group.GET("/all", server.GetMyRecipesHandle)
 
-	recipe_group.POST("/comment/:id/add", server.CreateCommentHandle, jwtMiddleware)
-	recipe_group.POST("/comment/:id/delete", server.DeleteCommentHandle, jwtMiddleware)
-
-	recipe_group.POST("/comments", server.GetCommentsHandle)
 	recipe_group.POST("/comment/:id", server.GetCommentHandle)
+	recipe_group.POST("/comments", server.GetCommentsHandle)
+	recipe_group.POST("/comment/:id/add", server.CreateCommentHandle)
+	recipe_group.POST("/comment/:id/delete", server.DeleteCommentHandle)
 
 	recipe_group.GET("/:id", server.GetRecipeHandle)
 	recipe_group.GET("/all", server.GetRecipesHandle)

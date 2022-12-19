@@ -95,6 +95,28 @@ func (server *Server) UpdateRecipeHandle(c echo.Context) error {
 }
 
 func (server *Server) GetRecipeHandle(c echo.Context) error {
+	recipeIDStr := c.Param("id")
+	recipeID, err := strconv.Atoi(recipeIDStr)
+
+	if err != nil {
+		log.Printf("Get recipe by id: %s", err.Error())
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Неверный id рецепта"})
+	}
+
+	recipe, err := server.GetRecipeById(recipeID)
+	if err != nil {
+		log.Printf("Get recipe by id: %s", err.Error())
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
+	}
+
+	if !recipe.BoolRecipeVisibility {
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
+	}
+
+	return c.JSON(http.StatusOK, recipe)
+}
+
+func (server *Server) GetMyRecipeHandle(c echo.Context) error {
 	user, err := server.GetUserByClaims(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Не удалось найти пользователя"})
@@ -114,7 +136,7 @@ func (server *Server) GetRecipeHandle(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
 	}
 
-	if !recipe.BoolRecipeVisibility && user.ID != recipe.IntUserId {
+	if user.ID != recipe.IntUserId {
 		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
 	}
 
@@ -122,6 +144,24 @@ func (server *Server) GetRecipeHandle(c echo.Context) error {
 }
 
 func (server *Server) GetRecipesHandle(c echo.Context) error {
+	var recipes []models.Recipe
+
+	err := server.DB.
+		Preload("User").
+		Preload("RecipeStages").
+		Preload("RecipeStages.StagePhotos").
+		Preload("RecipeComments").
+		Preload("RecipeIngredients").
+		Find(&recipes, "bool_recipe_visibility = true").Error
+	if err != nil {
+		log.Printf("Get all recipes: %s", err.Error())
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
+	}
+
+	return c.JSON(http.StatusOK, recipes)
+}
+
+func (server *Server) GetMyRecipesHandle(c echo.Context) error {
 	user, err := server.GetUserByClaims(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Не удалось найти пользователя"})
@@ -135,7 +175,7 @@ func (server *Server) GetRecipesHandle(c echo.Context) error {
 		Preload("RecipeStages.StagePhotos").
 		Preload("RecipeComments").
 		Preload("RecipeIngredients").
-		Find(&recipes, "bool_recipe_visibility = true OR int_user_id = ?", user.ID).Error
+		Find(&recipes, "int_user_id = ?", user.ID).Error
 	if err != nil {
 		log.Printf("Get all recipes: %s", err.Error())
 		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
@@ -143,10 +183,6 @@ func (server *Server) GetRecipesHandle(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, recipes)
 }
-
-// func (server *Server) UpdateRecipeHandle(c echo.Context) error {
-// 	return nil
-// }
 
 func (server *Server) DeleteRecipeHandle(c echo.Context) error {
 	user, err := server.GetUserByClaims(c)
