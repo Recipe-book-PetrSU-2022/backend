@@ -47,3 +47,59 @@ type UserResponse struct {
 	Username     string `json:"username"` // Никнейм
 	ProfilePhoto string `json:"photo"`    // Фото профиля
 }
+
+type CommentResponse struct {
+	Id        uint `json:"id"`
+	UserId    uint `json:"user_id"`
+	RecipieId uint `json:"recipie_id"`
+
+	Description string `json:"description"`
+	Rate        uint   `json:"rate"`
+	Timestamp   int    `json:"timestamp"`
+}
+
+type RecipeIngredientResponse struct {
+	Id           uint `json:"id"`
+	RecipieId    uint `json:"recipie_id"`
+	IngredientId uint `json:"ingredient_id"`
+
+	Name          string `json:"name"`
+	Grams         int    `json:"grams"`
+	Calories      int    `json:"calories"`
+	Proteins      int    `json:"proteins"`
+	Fats          int    `json:"fats"`
+	Carbohydrates int    `json:"carbohydrates"`
+}
+
+type StagePhotoResponose struct {
+	Id    uint   `json:"id"`
+	Image string `json:"name"`
+}
+
+type StageResponse struct {
+	Id          uint                   `json:"id"`
+	Description string                 `json:"description"`
+	Photos      []*StagePhotoResponose `json:"photos"`
+}
+
+// Структура ответа с пустым рецептом
+//
+// Переменные структуры:
+//   - Сообщение
+type RecipeResponse struct {
+	Message string `json:"message"` // Сообщение
+
+	Id     uint `json:"id"`
+	UserId uint `json:"user_id"`
+
+	Name        string                      `json:"name"`
+	Servings    int                         `json:"servings"`
+	Time        int                         `json:"time"`
+	Country     string                      `json:"country"`
+	Type        string                      `json:"type"`
+	Cover       string                      `json:"cover"`
+	IsVisible   bool                        `json:"is_visible"`
+	Stages      []*StageResponse            `json:"stages"`
+	Comments    []*CommentResponse          `json:"comments"`
+	Ingredients []*RecipeIngredientResponse `json:"ingredients"`
+}

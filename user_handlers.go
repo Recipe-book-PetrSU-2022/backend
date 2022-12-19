@@ -132,11 +132,14 @@ func (server *Server) SignInHandle(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Пароль пользователя не может быть пустым"})
 	}
 
+	log.Printf("user = %+v", user_data)
+
 	// Прошли все проверки
 
 	var user models.User
 
 	err = server.DB.First(&user, "str_user_name = ?", user_data.Login).Error
+	log.Println(err)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Пользователь не найден"})
 	}

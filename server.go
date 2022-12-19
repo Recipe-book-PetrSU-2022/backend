@@ -79,7 +79,8 @@ func (server *Server) Run() error {
 	profile_group.GET("/update", server.ChangeProfileHandle)
 	profile_group.GET("/delete", server.DeleteProfileHandle)
 
-	recipe_group.POST("/add", server.CreateRecipeHandle)
+	recipe_group.POST("/add", server.CreateEmptyRecipeHandle)
+	recipe_group.POST("/complete/:id", server.CreateRecipeHandle)
 	recipe_group.GET("/:id", server.GetRecipeHandle)
 	recipe_group.POST("/change/:id", server.UpdateRecipeHandle)
 	recipe_group.POST("/delete/:id", server.DeleteRecipeHandle)
