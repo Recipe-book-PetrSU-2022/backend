@@ -13,7 +13,7 @@ type Recipe struct {
 	StrRecipeImage       string             `gorm:"not null"`
 	BoolRecipeVisibility bool               `gorm:"not null"`
 	IntUserId            uint               `gorm:"not null"`
-	User                 *User              `gorm:"foreignKey:IntUserId" json:"user,omitempty"`
+	User                 User               `gorm:"foreignKey:IntUserId"`
 	RecipeStages         []Stage            `gorm:"foreignKey:IntRecipeId"`
 	RecipeComments       []Comment          `gorm:"foreignKey:IntRecipeId"`
 	RecipeIngredients    []RecipeIngredient `gorm:"foreignKey:IntRecipeId"`
