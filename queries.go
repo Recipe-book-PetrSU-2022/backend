@@ -6,6 +6,7 @@ func (server *Server) GetRecipeById(id int) (*models.Recipe, error) {
 	var recipe models.Recipe
 
 	err := server.DB.
+		Preload("User").
 		Preload("RecipeStages").
 		Preload("RecipeStages.StagePhotos").
 		Preload("RecipeComments").

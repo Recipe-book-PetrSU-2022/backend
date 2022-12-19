@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -25,7 +26,7 @@ func (server *Server) CreateEmptyRecipeHandle(c echo.Context) error {
 	}
 
 	recipe := models.Recipe{
-		User: user,
+		User: *user,
 	}
 
 	err = server.DB.Create(&recipe).Error
@@ -40,30 +41,53 @@ func (server *Server) CreateEmptyRecipeHandle(c echo.Context) error {
 	return c.JSON(http.StatusOK, &RecipeResponse{Message: "Создан новый рецепт", Id: recipeID})
 }
 
-func (server *Server) CreateRecipeHandle(c echo.Context) error {
-	// user, err := server.GetUserByClaims(c)
-	// if err != nil {
-	// 	return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Не удалось найти пользователя"})
-	// }
+func (server *Server) CompleteRecipeHandle(c echo.Context) error {
+	user, err := server.GetUserByClaims(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Не удалось найти пользователя"})
+	}
 
-	// recipeID := c.QueryParam("id")
+	recipeID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		log.Printf("Recipe id: %s", err.Error())
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Неверный id рецепта"})
+	}
 
-	// var recipe_data RecipeData
+	recipe, err := server.GetRecipeById(recipeID)
+	if err != nil {
+		log.Printf("Get recipe by id: %s", err.Error())
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
+	}
 
-	// err = c.Bind(&recipe_data)
-	// if err != nil {
-	// 	return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить данные от пользователя: %s", err.Error())})
-	// }
+	var recipe_data RecipeData
 
-	// log.Printf("%+v", recipe_data)
+	err = c.Bind(&recipe_data)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить данные от пользователя: %s", err.Error())})
+	}
 
-	// if len(recipe_data.Name) == 0 {
-	// 	return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Название рецепта не может быть пустым"})
-	// }
+	log.Printf("%+v", recipe_data)
 
-	// server.DB.Model(&user).Update("StrUserName", recipe_data.Name)
+	if len(recipe_data.Name) == 0 {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Название рецепта не может быть пустым"})
+	}
 
-	return nil
+	if user.ID != recipe.IntUserId {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Рецепт принадлежит другому пользователю"})
+	}
+
+	recipe.StrRecipeName = recipe_data.Name
+	recipe.IntServings = recipe_data.Servings
+	recipe.IntTime = recipe_data.Time
+	recipe.StrRecipeCountry = recipe_data.Country
+	recipe.StrRecipeType = recipe_data.Type
+
+	err = server.DB.Save(&recipe).Error
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить обновить рецепт: %s", err.Error())})
+	}
+
+	return c.JSON(http.StatusOK, &DefaultResponse{Message: "Рецепт обновлен"})
 }
 
 func (server *Server) GetRecipeHandle(c echo.Context) error {
@@ -80,22 +104,6 @@ func (server *Server) GetRecipeHandle(c echo.Context) error {
 		log.Printf("Get recipe by id: %s", err.Error())
 		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
 	}
-
-	// stages := StageToResponse()
-
-	// return c.JSON(http.StatusOK, &RecipeResponse{
-	// 	Message:   "Ок",
-	// 	Id:        recipe.ID,
-	// 	UserId:    recipe.User.ID,
-	// 	Name:      recipe.StrRecipeName,
-	// 	Servings:  recipe.IntServings,
-	// 	Time:      recipe.IntTime,
-	// 	Country:   recipe.StrRecipeCountry,
-	// 	Type:      recipe.StrRecipeType,
-	// 	Cover:     recipe.StrRecipeImage,
-	// 	IsVisible: recipe.BoolRecipeVisibility,
-	// 	Stages:    stages,
-	// })
 
 	return c.JSON(http.StatusOK, recipe)
 }
