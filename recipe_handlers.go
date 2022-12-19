@@ -214,12 +214,37 @@ func (server *Server) DeleteRecipeHandle(c echo.Context) error {
 	return c.JSON(http.StatusOK, &DefaultResponse{Message: "Рецепт удален"})
 }
 
+// хз что тут должно быть
 func (server *Server) FindRecipesHandle(c echo.Context) error {
 	return nil
 }
 
 func (server *Server) AddRecipeToFavoritesHandle(c echo.Context) error {
-	return nil
+	user, err := server.GetUserByClaims(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Не удалось найти пользователя"})
+	}
+
+	recipeID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		log.Printf("Recipe id: %s", err.Error())
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Неверный id рецепта"})
+	}
+
+	recipe, err := server.GetRecipeById(recipeID)
+	if err != nil {
+		log.Printf("Get recipe by id: %s", err.Error())
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
+	}
+
+	user.UserFavorite = append(user.UserFavorite, *recipe)
+	err = server.DB.Save(&user).Error
+	if err != nil {
+		log.Printf("Favorite: %s", err.Error())
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось добавить рецепт в избранное"})
+	}
+
+	return c.JSON(http.StatusOK, &DefaultResponse{Message: "Ок"})
 }
 
 func (server *Server) RemoveRecipeFromFavoritesHandle(c echo.Context) error {

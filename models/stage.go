@@ -7,6 +7,6 @@ type Stage struct {
 
 	StrStageDesc string  `gorm:"not null"`
 	IntRecipeId  uint    `gorm:"not null"`
-	Recipe       Recipe  `gorm:"foreignKey:IntRecipeId"`
+	Recipe       Recipe  `gorm:"foreignKey:IntRecipeId" json:"-"`
 	StagePhotos  []Photo `gorm:"foreignKey:IntStageId"`
 }

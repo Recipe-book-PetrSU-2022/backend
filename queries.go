@@ -18,3 +18,17 @@ func (server *Server) GetRecipeById(id int) (*models.Recipe, error) {
 
 	return &recipe, nil
 }
+
+func (server *Server) GetStageById(id int) (*models.Stage, error) {
+	var stage models.Stage
+
+	err := server.DB.
+		Preload("Recipe").
+		Preload("StagePhotos").
+		First(&stage, "id = ?", id).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return &stage, nil
+}

@@ -96,6 +96,10 @@ func (server *Server) Run() error {
 	user_recipe_group.GET("/:id", server.GetMyRecipeHandle)
 	user_recipe_group.GET("/all", server.GetMyRecipesHandle)
 
+	user_recipe_group.POST("/:recipe_id/stage/add", server.CreateStageHandle)
+	user_recipe_group.POST("/stage/:stage_id/update", server.UpdateStageHandle)
+	user_recipe_group.POST("/stage/:stage_id/upload-photo", server.AddStagePhotoHandle)
+
 	recipe_group.POST("/comment/:id", server.GetCommentHandle)
 	recipe_group.POST("/comments", server.GetCommentsHandle)
 	recipe_group.POST("/comment/:id/add", server.CreateCommentHandle)
@@ -104,6 +108,7 @@ func (server *Server) Run() error {
 	recipe_group.GET("/:id", server.GetRecipeHandle)
 	recipe_group.GET("/all", server.GetRecipesHandle)
 	recipe_group.GET("/find", server.FindRecipesHandle)
+	recipe_group.GET("/favorite/:id", server.AddRecipeToFavoritesHandle, jwtMiddleware)
 
 	assets_group.GET("/:filename", server.DownloadFile)
 

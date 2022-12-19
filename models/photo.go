@@ -7,5 +7,5 @@ type Photo struct {
 
 	StrImage   string `gorm:"unique;not null"`
 	IntStageId uint   `gorm:"not null"`
-	Stage      Stage  `gorm:"foreignKey:IntStageId"`
+	Stage      Stage  `gorm:"foreignKey:IntStageId" json:"-"`
 }
