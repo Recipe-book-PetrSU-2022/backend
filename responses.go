@@ -56,3 +56,8 @@ type RecipeResponse struct {
 	Message string `json:"message"` // Сообщение
 	Id      uint   `json:"id"`
 }
+
+type CoverResponse struct {
+	Message string `json:"message"` // Сообщение
+	Cover   string `json:"cover"`
+}

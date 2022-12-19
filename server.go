@@ -27,7 +27,8 @@ type Server struct {
 	E                *echo.Echo // Echo http-сервер
 	DBConnectionInfo string     // Информация для подключения
 	DB               *gorm.DB   // Объект ORM
-	TokenKey         []byte
+	TokenKey         []byte     // ключ подписи токена
+	UploadsPath      string     // путь для загрузки файлов
 }
 
 // Функция для поднятия сервера
@@ -59,6 +60,11 @@ func (server *Server) Run() error {
 		return err
 	}
 
+	err = server.CreateUploadDirs()
+	if err != nil {
+		return err
+	}
+
 	server.E.Use(middleware.Logger())
 	server.E.Use(middleware.Recover())
 
@@ -71,6 +77,7 @@ func (server *Server) Run() error {
 
 	recipe_group := server.E.Group("/recipe", jwtMiddleware)
 	profile_group := server.E.Group("/profile", jwtMiddleware)
+	assets_group := server.E.Group("/assets")
 
 	server.E.POST("/signin", server.SignInHandle)
 	server.E.POST("/signup", server.SignUpHandle)
@@ -81,11 +88,11 @@ func (server *Server) Run() error {
 
 	recipe_group.POST("/add", server.CreateEmptyRecipeHandle)
 	recipe_group.POST("/complete/:id", server.UpdateRecipeHandle)
-	recipe_group.POST("/set-visible/:id", server.SetVisibleRecipeHandle)
-	recipe_group.POST("/set-invisible/:id", server.SetInvisibleRecipeHandle)
+	recipe_group.POST("/visible/:id", server.ChangeVisibilityRecipeHandle)
 	recipe_group.GET("/:id", server.GetRecipeHandle)
 	recipe_group.POST("/change/:id", server.UpdateRecipeHandle)
 	recipe_group.POST("/delete/:id", server.DeleteRecipeHandle)
+	recipe_group.POST("/upload-cover/:id", server.UploadRecipeCoverHandle)
 
 	recipe_group.POST("/comment/:id", server.GetCommentHandle)
 	recipe_group.POST("/comments", server.GetCommentsHandle)
@@ -94,6 +101,8 @@ func (server *Server) Run() error {
 
 	recipe_group.GET("/all", server.GetRecipesHandle)
 	recipe_group.GET("/find", server.FindRecipesHandle)
+
+	assets_group.GET("/:filename", server.DownloadFile)
 
 	return server.E.Start(fmt.Sprintf("%s:%d", server.Host, server.Port))
 }
@@ -121,6 +130,7 @@ func main() {
 		Port:             1337,
 		DBConnectionInfo: "root:my-secret-pw@tcp(127.0.0.1:3306)/recipe_book?charset=utf8mb4&parseTime=True",
 		TokenKey:         []byte("rakabidasta_test_key"),
+		UploadsPath:      "/tmp/recipe_book_uploads/",
 	}
 
 	err := server.Run()
