@@ -13,18 +13,30 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// Структура ответа для входа и регистрации
+// Структура ответа для регистрации
 //
 // Переменные структуры:
 //   - Никнейм
 //   - Почта пользователя
 //   - Пароль
 //   - Пароль для подтверждения
-type UserData struct {
+type UserDataSignup struct {
 	Login           string `json:"login"`            // Никнейм
 	Email           string `json:"email"`            // Почта
 	Password        string `json:"password"`         // Пароль
 	ConfirmPassword string `json:"confirm_password"` // Подтверждение пароля
+}
+
+// Структура ответа для входа
+//
+// Переменные структуры:
+//   - Никнейм
+//   - Почта пользователя
+//   - Пароль
+//   - Пароль для подтверждения
+type UserDataSignin struct {
+	Login    string `json:"login"`    // Никнейм
+	Password string `json:"password"` // Пароль
 }
 
 // Структура ответа для входа и регистрации
@@ -54,7 +66,7 @@ type ChangeUserData struct {
 func (server *Server) SignUpHandle(c echo.Context) error {
 	//
 	// Получение информации о пользователе с фронтэенда
-	var user_data UserData
+	var user_data UserDataSignup
 	err := c.Bind(&user_data)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить данные от пользователя: %s", err.Error())})
@@ -113,9 +125,19 @@ func (server *Server) SignUpHandle(c echo.Context) error {
 // Если пользователь найден, проверяет введенный пароль с сохранённым хэшем
 // Если пароли совпали, то создаётся jwt
 // Пример структуры токена в /claims/user_claims.go
+//
+//	@Summary	вход пользователя
+//	@Tags		auth
+//	@Accept		json
+//	@Produce	json
+//	@Router		/signin [post]
+//	@Param		request	body		UserDataSignin	true	"тело запроса"
+//	@Success	200		{object}	TokenResponse
+//	@Success	400		{object}	DefaultResponse
+//	@Success	500		{object}	DefaultResponse
 func (server *Server) SignInHandle(c echo.Context) error {
 	// Получаем данные от пользователя
-	var user_data UserData
+	var user_data UserDataSignin
 	err := c.Bind(&user_data)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить данные от пользователя: %s", err.Error())})

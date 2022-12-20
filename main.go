@@ -11,6 +11,9 @@ import (
 	"github.com/Recipe-book-PetrSU-2022/backend/models"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+
+	_ "github.com/Recipe-book-PetrSU-2022/backend/docs"
+	echoSwagger "github.com/swaggo/echo-swagger" // echo-swagger middleware
 )
 
 // Структура сервера
@@ -75,6 +78,9 @@ func (server *Server) Run() error {
 		SigningKey: server.TokenKey,
 	}
 	jwtMiddleware := middleware.JWTWithConfig(config)
+
+	server.E.Use(middleware.CORS())
+	server.E.GET("/swagger/*", echoSwagger.WrapHandler)
 
 	// Создание групп для применения middleware
 	recipe_group := server.E.Group("/recipe") // от лица кого угодно
@@ -143,6 +149,18 @@ func (server *Server) ConnectDB() error {
 
 	return nil
 }
+
+//	@title			Recipe Book API
+//	@description	Тут будет описание проекта
+
+//	@version	1.0
+
+//	@securityDefinitions.apikey	JWTAuth
+//	@in							header
+//	@name						Authorization
+//	@description				JWT токен пользователя
+
+//	@host	localhost:1337
 
 // Основная функция
 func main() {

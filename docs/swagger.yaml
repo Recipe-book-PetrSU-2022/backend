@@ -1,0 +1,68 @@
+definitions:
+  main.DefaultResponse:
+    properties:
+      message:
+        description: Сообщение
+        type: string
+    type: object
+  main.TokenResponse:
+    properties:
+      message:
+        description: Сообщение
+        type: string
+      token:
+        description: Токен
+        type: string
+    type: object
+  main.UserDataSignin:
+    properties:
+      login:
+        description: Никнейм
+        type: string
+      password:
+        description: Пароль
+        type: string
+    type: object
+host: localhost:1337
+info:
+  contact: {}
+  description: Тут будет описание проекта
+  title: Recipe Book API
+  version: "1.0"
+paths:
+  /signin:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: тело запроса
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.UserDataSignin'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.TokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.DefaultResponse'
+      summary: вход пользователя
+      tags:
+      - auth
+securityDefinitions:
+  JWTAuth:
+    description: JWT токен пользователя
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
