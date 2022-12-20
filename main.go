@@ -130,7 +130,7 @@ func (server *Server) Run() error {
 	recipe_group.POST("/favorite/:id", server.AddRecipeToFavoritesHandle, jwtMiddleware)
 
 	ingredient_group.GET("/all", server.GetIngredients)
-	ingredient_group.GET("/create", server.GetIngredients, jwtMiddleware)
+	ingredient_group.GET("/create", server.NewIngredient, jwtMiddleware)
 
 	// Эндпоинты для работы с файлами
 	assets_group.GET("/:filename", server.DownloadFile)
