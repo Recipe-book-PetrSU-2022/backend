@@ -238,8 +238,36 @@ func (server *Server) DeleteRecipeHandle(c echo.Context) error {
 	return c.JSON(http.StatusOK, &DefaultResponse{Message: "Рецепт удален"})
 }
 
+type FindData struct {
+	Text string `json:"text"`
+}
+
 func (server *Server) FindRecipesHandle(c echo.Context) error {
-	return nil
+	var find_data FindData
+	err := c.Bind(&find_data)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить данные от пользователя: %s", err.Error())})
+	}
+
+	if find_data.Text == "" {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Пустая строка поиска"})
+	}
+
+	// Получаем информацию о рецепте
+	var recipes []models.Recipe
+	err = server.DB.
+		Preload("User").
+		Preload("RecipeStages").
+		Preload("RecipeStages.StagePhotos").
+		Preload("RecipeComments").
+		Preload("RecipeIngredients").
+		Find(&recipes, "LOWER(str_recipe_name) LIKE ?", fmt.Sprintf("%%%s%%", find_data.Text)).Error
+	if err != nil {
+		log.Printf("Find recipes: %s", err.Error())
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
+	}
+
+	return c.JSON(http.StatusOK, recipes)
 }
 
 func (server *Server) AddRecipeToFavoritesHandle(c echo.Context) error {

@@ -77,7 +77,8 @@ func (server *Server) Run() error {
 	jwtMiddleware := middleware.JWTWithConfig(config)
 
 	// Создание групп для применения middleware
-	recipe_group := server.E.Group("/recipe")                        // от лица кого угодно
+	recipe_group := server.E.Group("/recipe") // от лица кого угодно
+	ingredient_group := server.E.Group("/ingredient")
 	user_recipe_group := server.E.Group("/my-recipe", jwtMiddleware) // от лица владельца
 	profile_group := server.E.Group("/profile", jwtMiddleware)
 	assets_group := server.E.Group("/assets")
@@ -117,6 +118,8 @@ func (server *Server) Run() error {
 	recipe_group.GET("/all", server.GetRecipesHandle)
 	recipe_group.GET("/find", server.FindRecipesHandle)
 	recipe_group.GET("/favorite/:id", server.AddRecipeToFavoritesHandle, jwtMiddleware)
+
+	ingredient_group.GET("/all", server.GetIngredients)
 
 	// Эндпоинты для работы с файлами
 	assets_group.GET("/:filename", server.DownloadFile)
