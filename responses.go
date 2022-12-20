@@ -68,6 +68,16 @@ type StageResponse struct {
 	Id      uint   `json:"id"`
 }
 
+// Структура ответа с ингредиентом
+//
+// Переменные структуры:
+//   - Сообщение
+//   - ID этапа
+type IngredientResponse struct {
+	Message string `json:"message"` // Сообщение
+	Id      uint   `json:"id"`
+}
+
 // Структура ответа с обложкой рецепта
 //
 // Переменные структуры:

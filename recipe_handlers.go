@@ -170,6 +170,7 @@ func (server *Server) GetRecipesHandle(c echo.Context) error {
 		Preload("RecipeStages.StagePhotos").
 		Preload("RecipeComments").
 		Preload("RecipeIngredients").
+		Preload("RecipeIngredients.Ingredient").
 		Find(&recipes, "bool_recipe_visibility = true").Error
 	if err != nil {
 		log.Printf("Get all recipes: %s", err.Error())
@@ -194,6 +195,7 @@ func (server *Server) GetMyRecipesHandle(c echo.Context) error {
 		Preload("RecipeStages.StagePhotos").
 		Preload("RecipeComments").
 		Preload("RecipeIngredients").
+		Preload("RecipeIngredients.Ingredient").
 		Find(&recipes, "int_user_id = ?", user.ID).Error
 	if err != nil {
 		log.Printf("Get all recipes: %s", err.Error())
@@ -415,4 +417,127 @@ func (server *Server) UploadRecipeCoverHandle(c echo.Context) error {
 
 	return c.JSON(http.StatusOK, &CoverResponse{Message: "Ок", Cover: filename})
 
+}
+
+type RecipeIngredientInfo struct {
+	IngredientId int `json:"ingredient_id"`
+	Grams        int `json:"grams"`
+}
+
+func (server *Server) AddIngredientHandle(c echo.Context) error {
+	// Получаем информацию о пользователе
+	user, err := server.GetUserByClaims(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Не удалось найти пользователя"})
+	}
+
+	// Получаем ID рецепта, к которому будет добавлен этап
+	recipeID, err := strconv.Atoi(c.Param("recipe_id"))
+	if err != nil {
+		log.Printf("Recipe id: %s", err.Error())
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Неверный id рецепта"})
+	}
+
+	// Получаем информацию о рецепте, к которому будет добавлен этап
+	recipe, err := server.GetRecipeById(recipeID)
+	if err != nil {
+		log.Printf("Get recipe by id: %s", err.Error())
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
+	}
+
+	// Проверка на то, что текущий пользователь автор рецепта
+	if user.ID != recipe.IntUserId {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Рецепт принадлежит другому пользователю"})
+	}
+
+	// Получаем данные с фронтенда
+	var recipe_ingredient_info RecipeIngredientInfo
+	err = c.Bind(&recipe_ingredient_info)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить данные от пользователя: %s", err.Error())})
+	}
+
+	var ingredient models.Ingredient
+	err = server.DB.First(&ingredient, "id = ?", recipe_ingredient_info.IngredientId).Error
+	if err != nil {
+		return c.JSON(http.StatusNotFound, &DefaultResponse{Message: "Ингредиент не найден"})
+	}
+
+	recipe.RecipeIngredients = append(recipe.RecipeIngredients, models.RecipeIngredient{
+		IntGrams:   recipe_ingredient_info.Grams,
+		Ingredient: ingredient,
+		Recipe:     *recipe,
+	})
+
+	err = server.DB.Save(&recipe).Error
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError, &DefaultResponse{
+				Message: "Не удалось добавить ингредиент для рецепта",
+			},
+		)
+	}
+
+	return c.JSON(http.StatusOK, &DefaultResponse{
+		Message: "Ингредиент добавлен",
+	})
+}
+
+func (server *Server) RemoveIngredientHandle(c echo.Context) error {
+	// Получаем информацию о пользователе
+	user, err := server.GetUserByClaims(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Не удалось найти пользователя"})
+	}
+
+	recipeID, err := strconv.Atoi(c.Param("recipe_id"))
+	if err != nil {
+		log.Printf("Recipe id: %s", err.Error())
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Неверный id рецепта"})
+	}
+
+	recipe, err := server.GetRecipeById(recipeID)
+	if err != nil {
+		log.Printf("Get recipe by id: %s", err.Error())
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
+	}
+
+	// Проверка на то, что текущий пользователь автор рецепта
+	if user.ID != recipe.IntUserId {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Рецепт принадлежит другому пользователю"})
+	}
+	// Получаем данные с фронтенда
+	var recipe_ingredient_info RecipeIngredientInfo
+	err = c.Bind(&recipe_ingredient_info)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить данные от пользователя: %s", err.Error())})
+	}
+
+	var ingredient models.Ingredient
+	err = server.DB.First(&ingredient, "id = ?", recipe_ingredient_info.IngredientId).Error
+	if err != nil {
+		return c.JSON(http.StatusNotFound, &DefaultResponse{Message: "Ингредиент не найден"})
+	}
+
+	var recipeIngredient models.RecipeIngredient
+	err = server.DB.Where(&models.RecipeIngredient{
+		Recipe:     *recipe,
+		Ingredient: ingredient,
+	}).First(&recipeIngredient).Error
+	if err != nil {
+		return c.JSON(http.StatusNotFound, &DefaultResponse{Message: "Ингредиент рецепта не найден"})
+	}
+
+	err = server.DB.Unscoped().Delete(&recipeIngredient).Error
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError, &DefaultResponse{
+				Message: "Не удалось удалить ингредиент для рецепта",
+			},
+		)
+	}
+
+	return c.JSON(http.StatusOK, &DefaultResponse{
+		Message: "Ингредиент удален",
+	})
 }

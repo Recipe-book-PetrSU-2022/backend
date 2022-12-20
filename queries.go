@@ -12,6 +12,7 @@ func (server *Server) GetRecipeById(id int) (*models.Recipe, error) {
 		Preload("RecipeStages.StagePhotos").
 		Preload("RecipeComments").
 		Preload("RecipeIngredients").
+		Preload("RecipeIngredients.Ingredient").
 		First(&recipe, "id = ?", id).Error
 	if err != nil {
 		return nil, err

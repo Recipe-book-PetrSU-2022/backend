@@ -104,6 +104,8 @@ func (server *Server) Run() error {
 
 	// Эндпоинты для работы с этапами
 	user_recipe_group.POST("/:recipe_id/stage/add", server.CreateStageHandle)
+	user_recipe_group.POST("/:recipe_id/ingredient/add", server.AddIngredientHandle)
+	user_recipe_group.POST("/:recipe_id/ingredient/delete", server.RemoveIngredientHandle)
 	user_recipe_group.POST("/stage/:stage_id/update", server.UpdateStageHandle)
 	user_recipe_group.POST("/stage/:stage_id/upload-photo", server.AddStagePhotoHandle)
 
@@ -120,6 +122,7 @@ func (server *Server) Run() error {
 	recipe_group.GET("/favorite/:id", server.AddRecipeToFavoritesHandle, jwtMiddleware)
 
 	ingredient_group.GET("/all", server.GetIngredients)
+	ingredient_group.GET("/create", server.GetIngredients, jwtMiddleware)
 
 	// Эндпоинты для работы с файлами
 	assets_group.GET("/:filename", server.DownloadFile)

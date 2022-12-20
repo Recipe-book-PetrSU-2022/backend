@@ -5,7 +5,7 @@ import "gorm.io/gorm"
 type Ingredient struct {
 	gorm.Model
 
-	StrIngredientName string             `gorm:"index;not null"`
+	StrIngredientName string             `gorm:"unique;index;not null"`
 	IntCalories       int                `gorm:"not null;default:0"`
 	IntProteins       int                `gorm:"not null;default:0"`
 	IntFats           int                `gorm:"not null;default:0"`
