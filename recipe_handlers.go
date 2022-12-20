@@ -101,7 +101,7 @@ func (server *Server) UpdateRecipeHandle(c echo.Context) error {
 	// Сохраняем обновленный рецепт в БД
 	err = server.DB.Save(&recipe).Error
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить обновить рецепт: %s", err.Error())})
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: fmt.Sprintf("Не удалось обновить рецепт: %s", err.Error())})
 	}
 
 	return c.JSON(http.StatusOK, &DefaultResponse{Message: "Рецепт обновлен"})
