@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -166,11 +167,14 @@ func (server *Server) ConnectDB() error {
 func main() {
 	e := echo.New()
 
+	mysqlUser := os.Getenv("MYSQL_USER")
+	mysqlPass := os.Getenv("MYSQL_PASS")
+
 	server := Server{
 		E:                e,
 		Host:             "0.0.0.0",
 		Port:             1337,
-		DBConnectionInfo: "root:my-secret-pw@tcp(127.0.0.1:3306)/recipe_book?charset=utf8mb4&parseTime=True",
+		DBConnectionInfo: fmt.Sprintf("%s:%s@tcp(127.0.0.1:3306)/recipe_book?charset=utf8mb4&parseTime=True", mysqlUser, mysqlPass),
 		TokenKey:         []byte("rakabidasta_test_key"),
 		UploadsPath:      "/tmp/recipe_book_uploads/",
 	}
