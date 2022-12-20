@@ -171,7 +171,7 @@ func (server *Server) AddStagePhotoHandle(c echo.Context) error {
 	// Сохраняем файл
 	filename, err := server.SaveFileWithExt(src, fileExt)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить сохранить файл: %s", err.Error())})
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: fmt.Sprintf("Не удалось сохранить файл: %s", err.Error())})
 	}
 
 	// Добавляем имя файла к этапу
