@@ -1,4 +1,33 @@
 definitions:
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
+    type: object
+  main.ChangeUserData:
+    properties:
+      confirm_password:
+        description: Подтверждение нового пароля
+        type: string
+      email:
+        description: Почта
+        type: string
+      login:
+        description: Никнейм
+        type: string
+      old_password:
+        description: Текущий пароль
+        type: string
+      password:
+        description: Новый пароль
+        type: string
+      photo:
+        description: Фото профиля
+        type: string
+    type: object
   main.DefaultResponse:
     properties:
       message:
@@ -23,6 +52,21 @@ definitions:
         description: Пароль
         type: string
     type: object
+  models.User:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      id:
+        type: integer
+      strUserImage:
+        type: string
+      strUserName:
+        type: string
+      updatedAt:
+        type: string
+    type: object
 host: localhost:1337
 info:
   contact: {}
@@ -30,6 +74,55 @@ info:
   title: Recipe Book API
   version: "1.0"
 paths:
+  /profile:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.DefaultResponse'
+      security:
+      - JWTAuth: []
+      summary: получить профиль текущего пользователя
+      tags:
+      - auth
+  /profile/update:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: тело запроса
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.ChangeUserData'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.DefaultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/main.DefaultResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/main.DefaultResponse'
+      security:
+      - JWTAuth: []
+      summary: изменить пользователя
+      tags:
+      - auth
   /signin:
     post:
       consumes:

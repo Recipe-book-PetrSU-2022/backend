@@ -16,6 +16,86 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/profile": {
+            "get": {
+                "security": [
+                    {
+                        "JWTAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "получить профиль текущего пользователя",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/main.DefaultResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/profile/update": {
+            "post": {
+                "security": [
+                    {
+                        "JWTAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "изменить пользователя",
+                "parameters": [
+                    {
+                        "description": "тело запроса",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.ChangeUserData"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/main.DefaultResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/main.DefaultResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/main.DefaultResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/signin": {
             "post": {
                 "consumes": [
@@ -63,6 +143,47 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "gorm.DeletedAt": {
+            "type": "object",
+            "properties": {
+                "time": {
+                    "type": "string"
+                },
+                "valid": {
+                    "description": "Valid is true if Time is not NULL",
+                    "type": "boolean"
+                }
+            }
+        },
+        "main.ChangeUserData": {
+            "type": "object",
+            "properties": {
+                "confirm_password": {
+                    "description": "Подтверждение нового пароля",
+                    "type": "string"
+                },
+                "email": {
+                    "description": "Почта",
+                    "type": "string"
+                },
+                "login": {
+                    "description": "Никнейм",
+                    "type": "string"
+                },
+                "old_password": {
+                    "description": "Текущий пароль",
+                    "type": "string"
+                },
+                "password": {
+                    "description": "Новый пароль",
+                    "type": "string"
+                },
+                "photo": {
+                    "description": "Фото профиля",
+                    "type": "string"
+                }
+            }
+        },
         "main.DefaultResponse": {
             "type": "object",
             "properties": {
@@ -94,6 +215,29 @@ const docTemplate = `{
                 },
                 "password": {
                     "description": "Пароль",
+                    "type": "string"
+                }
+            }
+        },
+        "models.User": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "deletedAt": {
+                    "$ref": "#/definitions/gorm.DeletedAt"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "strUserImage": {
+                    "type": "string"
+                },
+                "strUserName": {
+                    "type": "string"
+                },
+                "updatedAt": {
                     "type": "string"
                 }
             }

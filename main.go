@@ -95,8 +95,8 @@ func (server *Server) Run() error {
 
 	// Эндпоинты для администрирования профиля
 	profile_group.GET("", server.ProfileHandle)
-	profile_group.GET("/update", server.ChangeProfileHandle)
-	profile_group.GET("/delete", server.DeleteProfileHandle)
+	profile_group.POST("/update", server.ChangeProfileHandle)
+	profile_group.DELETE("/delete", server.DeleteProfileHandle)
 
 	// Эндпоинты для работы с рецептом
 	user_recipe_group.POST("/add", server.CreateEmptyRecipeHandle)

@@ -218,6 +218,14 @@ func (server *Server) GetUserByClaims(c echo.Context) (*models.User, error) {
 // Ищет пользователя в БД по jwt (GetUserByClaims)
 // Если пользователь найден, то возвращает основную информацию о пользователе
 // Иначе ошибку
+//
+//	@Summary	получить профиль текущего пользователя
+//	@Tags		auth
+//	@Produce	json
+//	@Router		/profile [get]
+//	@Success	200	{object}	models.User
+//	@Success	400	{object}	DefaultResponse
+//	@Security	JWTAuth
 func (server *Server) ProfileHandle(c echo.Context) error {
 	// Получаем информацию о пользователе
 	user, err := server.GetUserByClaims(c)
@@ -226,9 +234,9 @@ func (server *Server) ProfileHandle(c echo.Context) error {
 	}
 
 	// Создаем ответ с ID, логином, почтой и фотографией профиля
-	response := &ProfileResponse{Message: "Удачный вход на страницу профиля", Id: user.ID, Username: user.StrUserName, Email: user.StrUserEmail, ProfilePhoto: user.StrUserImage}
+	// response := &ProfileResponse{Message: "Удачный вход на страницу профиля", Id: user.ID, Username: user.StrUserName, Email: user.StrUserEmail, ProfilePhoto: user.StrUserImage}
 
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, user)
 }
 
 // Изменение данных о пользователе
@@ -239,6 +247,17 @@ func (server *Server) ProfileHandle(c echo.Context) error {
 // Иначе ошибку
 // Проверяет на наличие измененных данных
 // Поочередно проверяет логин, почту, пароль
+//
+//	@Summary	изменить пользователя
+//	@Tags		auth
+//	@Accept		json
+//	@Produce	json
+//	@Router		/profile/update [post]
+//	@Param		request	body		ChangeUserData	true	"тело запроса"
+//	@Success	200		{object}	DefaultResponse
+//	@Success	400		{object}	DefaultResponse
+//	@Success	500		{object}	DefaultResponse
+//	@Security	JWTAuth
 func (server *Server) ChangeProfileHandle(c echo.Context) error {
 	// Получаем данные о пользователе
 	user, err := server.GetUserByClaims(c)
