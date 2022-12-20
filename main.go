@@ -130,7 +130,7 @@ func (server *Server) Run() error {
 	recipe_group.POST("/favorite/:id", server.AddRecipeToFavoritesHandle, jwtMiddleware)
 
 	ingredient_group.GET("/all", server.GetIngredients)
-	ingredient_group.GET("/create", server.NewIngredient, jwtMiddleware)
+	ingredient_group.POST("/create", server.NewIngredient, jwtMiddleware)
 
 	// Эндпоинты для работы с файлами
 	assets_group.GET("/:filename", server.DownloadFile)
@@ -169,13 +169,14 @@ func main() {
 
 	mysqlUser := os.Getenv("MYSQL_USER")
 	mysqlPass := os.Getenv("MYSQL_PASS")
+	tokenKey := os.Getenv("TOKEN_KEY")
 
 	server := Server{
 		E:                e,
 		Host:             "0.0.0.0",
 		Port:             1337,
 		DBConnectionInfo: fmt.Sprintf("%s:%s@tcp(127.0.0.1:3306)/recipe_book?charset=utf8mb4&parseTime=True", mysqlUser, mysqlPass),
-		TokenKey:         []byte("rakabidasta_test_key"),
+		TokenKey:         []byte(tokenKey),
 		UploadsPath:      "/tmp/recipe_book_uploads/",
 	}
 
