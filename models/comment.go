@@ -9,7 +9,7 @@ type Comment struct {
 	IntRate             int    `gorm:"not null"`
 	IntCommentTimestamp int    `gorm:"not null"`
 	IntUserId           uint   `gorm:"not null"`
-	User                User   `gorm:"foreignKey:IntUserId"`
+	User                User   `gorm:"foreignKey:IntUserId" json:"-"`
 	IntRecipeId         uint   `gorm:"not null"`
-	Recipe              Recipe `gorm:"foreignKey:IntRecipeId"`
+	Recipe              Recipe `gorm:"foreignKey:IntRecipeId" json:"-"`
 }

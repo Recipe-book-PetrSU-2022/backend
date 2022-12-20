@@ -107,10 +107,10 @@ func (server *Server) Run() error {
 	user_recipe_group.POST("/stage/:stage_id/upload-photo", server.AddStagePhotoHandle)
 
 	// Эндпоинты для работы с комментариями
-	recipe_group.POST("/comment/:id", server.GetCommentHandle)
-	recipe_group.POST("/comments", server.GetCommentsHandle)
-	recipe_group.POST("/comment/:id/add", server.CreateCommentHandle)
-	recipe_group.POST("/comment/:id/delete", server.DeleteCommentHandle)
+	recipe_group.GET("/:recipe_id/comment/:comment_id", server.GetCommentHandle)
+	recipe_group.GET("/:recipe_id/comments", server.GetCommentsHandle)
+	recipe_group.POST("/:recipe_id/comment/add", server.CreateCommentHandle, jwtMiddleware)
+	recipe_group.POST("/:recipe_id/comment/:comment_id/delete", server.DeleteCommentHandle, jwtMiddleware)
 
 	// Эндпоинты для работы с группой рецептов
 	recipe_group.GET("/:id", server.GetRecipeHandle)
