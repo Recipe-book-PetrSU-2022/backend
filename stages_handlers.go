@@ -69,6 +69,45 @@ func (server *Server) CreateStageHandle(c echo.Context) error {
 	return c.JSON(http.StatusOK, &StageResponse{Message: "Создан новый этап", Id: stage.ID})
 }
 
+func (server *Server) DeleteStageHandle(c echo.Context) error {
+	//
+	// Получаем информацию о пользователе
+	user, err := server.GetUserByClaims(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Не удалось найти пользователя"})
+	}
+
+	// Получаем ID рецепта, к которому будет добавлен этап
+	recipeID, err := strconv.Atoi(c.Param("stage_id"))
+	if err != nil {
+		log.Printf("Recipe id: %s", err.Error())
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Неверный id рецепта"})
+	}
+
+	// Получаем информацию об этапе, который будем изменять
+	stage, err := server.GetStageById(recipeID)
+	if err != nil {
+		log.Printf("Get stage by id: %s", err.Error())
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти этап"})
+	}
+
+	// Проверка на то, что текущий пользователь автор рецепта
+	if user.ID != stage.Recipe.IntUserId {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Рецепт принадлежит другому пользователю"})
+	}
+
+	err = server.DB.Unscoped().Delete(&stage).Error
+	if err != nil {
+		return c.JSON(
+			http.StatusInternalServerError, &DefaultResponse{
+				Message: "Не удалось удалить этап",
+			},
+		)
+	}
+
+	return c.JSON(http.StatusOK, &DefaultResponse{Message: "Этап удален"})
+}
+
 // Функция для обновления данных об этапе
 func (server *Server) UpdateStageHandle(c echo.Context) error {
 	//
