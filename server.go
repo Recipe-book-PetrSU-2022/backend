@@ -120,7 +120,7 @@ func (server *Server) Run() error {
 	recipe_group.GET("/:id", server.GetRecipeHandle)
 	recipe_group.GET("/all", server.GetRecipesHandle)
 	recipe_group.GET("/find", server.FindRecipesHandle)
-	recipe_group.GET("/favorite/:id", server.AddRecipeToFavoritesHandle, jwtMiddleware)
+	recipe_group.POST("/favorite/:id", server.AddRecipeToFavoritesHandle, jwtMiddleware)
 
 	ingredient_group.GET("/all", server.GetIngredients)
 	ingredient_group.GET("/create", server.GetIngredients, jwtMiddleware)
