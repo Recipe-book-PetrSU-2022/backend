@@ -52,16 +52,27 @@ type UserResponse struct {
 //
 // Переменные структуры:
 //   - Сообщение
+//   - ID рецепта
 type RecipeResponse struct {
 	Message string `json:"message"` // Сообщение
 	Id      uint   `json:"id"`
 }
 
+// Структура ответа с этапом
+//
+// Переменные структуры:
+//   - Сообщение
+//   - ID этапа
 type StageResponse struct {
 	Message string `json:"message"` // Сообщение
 	Id      uint   `json:"id"`
 }
 
+// Структура ответа с обложкой рецепта
+//
+// Переменные структуры:
+//   - Сообщение
+//   - Обложка рецепта
 type CoverResponse struct {
 	Message string `json:"message"` // Сообщение
 	Cover   string `json:"cover"`

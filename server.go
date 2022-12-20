@@ -39,12 +39,14 @@ type Server struct {
 // Прописываются эндпоинты
 // И в конце запускается сам сервер
 func (server *Server) Run() error {
+	//
+	// Подключение к БД
 	err := server.ConnectDB()
-
 	if err != nil {
 		return err
 	}
 
+	// Автомиграция моделей
 	err = server.DB.AutoMigrate(
 		&models.User{},
 		&models.Filter{},
@@ -55,38 +57,41 @@ func (server *Server) Run() error {
 		&models.Photo{},
 		&models.RecipeIngredient{},
 	)
-
 	if err != nil {
 		return err
 	}
 
+	// Создание директорий для хранения файлов
 	err = server.CreateUploadDirs()
 	if err != nil {
 		return err
 	}
 
+	// Использование middleware
 	server.E.Use(middleware.Logger())
 	server.E.Use(middleware.Recover())
-
 	config := middleware.JWTConfig{
 		Claims:     &claims.UserClaims{},
 		SigningKey: server.TokenKey,
 	}
-
 	jwtMiddleware := middleware.JWTWithConfig(config)
 
+	// Создание групп для применения middleware
 	recipe_group := server.E.Group("/recipe")                        // от лица кого угодно
 	user_recipe_group := server.E.Group("/my-recipe", jwtMiddleware) // от лица владельца
 	profile_group := server.E.Group("/profile", jwtMiddleware)
 	assets_group := server.E.Group("/assets")
 
+	// Эндпоинты для регистрации логина
 	server.E.POST("/signin", server.SignInHandle)
 	server.E.POST("/signup", server.SignUpHandle)
 
+	// Эндпоинты для администрирования профиля
 	profile_group.GET("", server.ProfileHandle)
 	profile_group.GET("/update", server.ChangeProfileHandle)
 	profile_group.GET("/delete", server.DeleteProfileHandle)
 
+	// Эндпоинты для работы с рецептом
 	user_recipe_group.POST("/add", server.CreateEmptyRecipeHandle)
 	user_recipe_group.POST("/complete/:id", server.UpdateRecipeHandle)
 	user_recipe_group.POST("/visible/:id", server.ChangeVisibilityRecipeHandle)
@@ -96,20 +101,24 @@ func (server *Server) Run() error {
 	user_recipe_group.GET("/:id", server.GetMyRecipeHandle)
 	user_recipe_group.GET("/all", server.GetMyRecipesHandle)
 
+	// Эндпоинты для работы с этапами
 	user_recipe_group.POST("/:recipe_id/stage/add", server.CreateStageHandle)
 	user_recipe_group.POST("/stage/:stage_id/update", server.UpdateStageHandle)
 	user_recipe_group.POST("/stage/:stage_id/upload-photo", server.AddStagePhotoHandle)
 
+	// Эндпоинты для работы с комментариями
 	recipe_group.POST("/comment/:id", server.GetCommentHandle)
 	recipe_group.POST("/comments", server.GetCommentsHandle)
 	recipe_group.POST("/comment/:id/add", server.CreateCommentHandle)
 	recipe_group.POST("/comment/:id/delete", server.DeleteCommentHandle)
 
+	// Эндпоинты для работы с группой рецептов
 	recipe_group.GET("/:id", server.GetRecipeHandle)
 	recipe_group.GET("/all", server.GetRecipesHandle)
 	recipe_group.GET("/find", server.FindRecipesHandle)
 	recipe_group.GET("/favorite/:id", server.AddRecipeToFavoritesHandle, jwtMiddleware)
 
+	// Эндпоинты для работы с файлами
 	assets_group.GET("/:filename", server.DownloadFile)
 
 	return server.E.Start(fmt.Sprintf("%s:%d", server.Host, server.Port))
@@ -117,8 +126,8 @@ func (server *Server) Run() error {
 
 // Функция для подключения сервера к БД
 func (server *Server) ConnectDB() error {
+	// Соединение с БД
 	db, err := gorm.Open(mysql.Open(server.DBConnectionInfo), &gorm.Config{})
-
 	if err != nil {
 		return err
 	}
@@ -141,6 +150,7 @@ func main() {
 		UploadsPath:      "/tmp/recipe_book_uploads/",
 	}
 
+	// Запуск сервера
 	err := server.Run()
 
 	if err != nil {

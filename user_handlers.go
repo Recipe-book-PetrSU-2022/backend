@@ -52,8 +52,9 @@ type ChangeUserData struct {
 // После прохождения проверок, хэширует пароль, создаёт пользователя
 // и добавляет его в БД
 func (server *Server) SignUpHandle(c echo.Context) error {
+	//
+	// Получение информации о пользователе с фронтэенда
 	var user_data UserData
-
 	err := c.Bind(&user_data)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить данные от пользователя: %s", err.Error())})
@@ -61,30 +62,33 @@ func (server *Server) SignUpHandle(c echo.Context) error {
 
 	log.Printf("%+v", user_data)
 
+	// Если введен пустой логин
 	if len(user_data.Login) == 0 {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Имя пользователя не может быть пустым"})
 	}
 
+	// Если введена пустая почта
 	if len(user_data.Email) == 0 {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Почта пользователя не может быть пустой"})
 	}
 
+	// Если введен пустой пароль
 	if len(user_data.Password) == 0 {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Пароль пользователя не может быть пустым"})
 	}
 
+	// Если введен пустой повторный пароль
 	if user_data.Password != user_data.ConfirmPassword {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Пароли должны совпадать"})
 	}
 
-	// Прошли все проверки
-
+	// Получаем хэш пароля
 	passwordHash, err := HashPassword(user_data.Password)
-
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не получилось захешировать пароль"})
 	}
 
+	// Сохраняем данные о пользователе
 	user := models.User{
 		StrUserName:     user_data.Login,
 		StrUserPassword: passwordHash,
@@ -94,7 +98,6 @@ func (server *Server) SignUpHandle(c echo.Context) error {
 
 	// Добавляем пользователя в БД
 	err = server.DB.Create(&user).Error
-
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не получилось создать пользователя"})
 	}
@@ -111,8 +114,8 @@ func (server *Server) SignUpHandle(c echo.Context) error {
 // Если пароли совпали, то создаётся jwt
 // Пример структуры токена в /claims/user_claims.go
 func (server *Server) SignInHandle(c echo.Context) error {
+	// Получаем данные от пользователя
 	var user_data UserData
-
 	err := c.Bind(&user_data)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить данные от пользователя: %s", err.Error())})
@@ -120,34 +123,32 @@ func (server *Server) SignInHandle(c echo.Context) error {
 
 	log.Printf("%+v", user_data)
 
+	// Если введен пустой логин
 	if len(user_data.Login) == 0 {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Имя пользователя не может быть пустым"})
 	}
 
-	// if len(user_data.Email) == 0 {
-	// 	return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Почта пользователя не может быть пустой"})
-	// }
-
+	// Если введен пустой пароль
 	if len(user_data.Password) == 0 {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Пароль пользователя не может быть пустым"})
 	}
 
 	log.Printf("user = %+v", user_data)
 
-	// Прошли все проверки
-
+	// Берём информацию о пользователе по логину
 	var user models.User
-
 	err = server.DB.First(&user, "str_user_name = ?", user_data.Login).Error
 	log.Println(err)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Пользователь не найден"})
 	}
 
+	// Проверяем совпадает ли введенный пароль с сохраненным хэшем
 	if !CheckPasswordHash(user.StrUserPassword, user_data.Password) {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Введены неверные данные"})
 	}
 
+	// Заполняем структуру для JWT
 	user_claims := claims.UserClaims{
 		IntUserId:     user.ID,
 		StrUserName:   user.StrUserName,
@@ -157,8 +158,8 @@ func (server *Server) SignInHandle(c echo.Context) error {
 		},
 	}
 
+	// Создаем JWT
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, user_claims)
-
 	token_string, err := token.SignedString(server.TokenKey)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не получилось подписать токен"})
@@ -175,11 +176,12 @@ func (server *Server) SignInHandle(c echo.Context) error {
 // Если пользователь найден, то возращает указатель на пользователя
 // Иначе ошибку
 func (server *Server) GetUserByClaims(c echo.Context) (*models.User, error) {
+	// Получаем данные о JWT с фронтэнда
 	user_token := c.Get("user").(*jwt.Token)
 	user_claims := user_token.Claims.(*claims.UserClaims)
 
+	// Ищем пользователя по ID из JWT
 	var user models.User
-
 	err := server.DB.First(&user, "id = ?", user_claims.IntUserId).Error
 	if err != nil {
 		return nil, errors.New("пользователь не найден")
@@ -195,11 +197,13 @@ func (server *Server) GetUserByClaims(c echo.Context) (*models.User, error) {
 // Если пользователь найден, то возвращает основную информацию о пользователе
 // Иначе ошибку
 func (server *Server) ProfileHandle(c echo.Context) error {
+	// Получаем информацию о пользователе
 	user, err := server.GetUserByClaims(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Пользователь не найден"})
 	}
 
+	// Создаем ответ с ID, логином, почтой и фотографией профиля
 	response := &ProfileResponse{Message: "Удачный вход на страницу профиля", Id: user.ID, Username: user.StrUserName, Email: user.StrUserEmail, ProfilePhoto: user.StrUserImage}
 
 	return c.JSON(http.StatusOK, response)
@@ -222,9 +226,8 @@ func (server *Server) ChangeProfileHandle(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Пользователь не найден"})
 	}
 
-	// Если пользователь нашёлся
+	// Получаем данные с фронтэнда
 	var user_data ChangeUserData
-
 	err = c.Bind(&user_data)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить данные от пользователя: %s", err.Error())})
@@ -237,6 +240,7 @@ func (server *Server) ChangeProfileHandle(c echo.Context) error {
 		return c.JSON(http.StatusOK, &DefaultResponse{Message: "Нечего изменять"})
 	}
 
+	// Если пользователь ввёл что-то в поле логина
 	if len(user_data.Login) != 0 {
 		if user_data.Login == user.StrUserName {
 			// Пользователь не стал менять никнейм
@@ -246,6 +250,7 @@ func (server *Server) ChangeProfileHandle(c echo.Context) error {
 		}
 	}
 
+	// Если пользователь ввёл что-то в поле почты
 	if len(user_data.Email) != 0 {
 		if user_data.Email == user.StrUserEmail {
 			// Пользователь не стал менять почту
@@ -255,6 +260,7 @@ func (server *Server) ChangeProfileHandle(c echo.Context) error {
 		}
 	}
 
+	// Если пользователь ввёл что-то в поле старого пароля
 	if len(user_data.OldPassword) == 0 {
 		// Пользователь не ввёл текущий пароль
 		if len(user_data.Password) != 0 || len(user_data.ConfirmPassword) != 0 {
@@ -277,8 +283,6 @@ func (server *Server) ChangeProfileHandle(c echo.Context) error {
 
 		server.DB.Model(&user).Update("StrUserPassword", passwordHash)
 	}
-
-	// Прошли все проверки
 
 	return c.JSON(http.StatusOK, &DefaultResponse{Message: "Пользователь успешно изменил свои данные!"})
 }

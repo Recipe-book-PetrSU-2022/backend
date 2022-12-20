@@ -20,7 +20,7 @@ func CheckPasswordHash(hash string, password string) bool {
 	return err == nil
 }
 
-// генерация случайной строки длины n
+// Функция для генерации случайной строки длины n
 func RandomString(n int) string {
 	b := make([]rune, n)
 	for i := range b {

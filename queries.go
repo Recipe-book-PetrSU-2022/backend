@@ -2,6 +2,7 @@ package main
 
 import "github.com/Recipe-book-PetrSU-2022/backend/models"
 
+// Функция для получения полной информации о рецепте
 func (server *Server) GetRecipeById(id int) (*models.Recipe, error) {
 	var recipe models.Recipe
 
@@ -19,6 +20,7 @@ func (server *Server) GetRecipeById(id int) (*models.Recipe, error) {
 	return &recipe, nil
 }
 
+// Функция для получения информации о этапе
 func (server *Server) GetStageById(id int) (*models.Stage, error) {
 	var stage models.Stage
 
