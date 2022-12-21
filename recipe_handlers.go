@@ -45,8 +45,6 @@ func (server *Server) CreateEmptyRecipeHandle(c echo.Context) error {
 	// Сохраняем ID рецепта, для передачи на фронтэнд
 	recipeID := recipe.ID
 
-	log.Printf("New recipe id = %d", recipeID)
-
 	return c.JSON(http.StatusOK, &RecipeResponse{Message: "Создан новый рецепт", Id: recipeID})
 }
 
@@ -61,14 +59,12 @@ func (server *Server) UpdateRecipeHandle(c echo.Context) error {
 	// Получаем ID рецепта с фронтэнда
 	recipeID, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		log.Printf("Recipe id: %s", err.Error())
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Неверный id рецепта"})
 	}
 
 	// Получаем информацию о рецепте
 	recipe, err := server.GetRecipeById(recipeID)
 	if err != nil {
-		log.Printf("Get recipe by id: %s", err.Error())
 		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
 	}
 
@@ -78,8 +74,6 @@ func (server *Server) UpdateRecipeHandle(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить данные от пользователя: %s", err.Error())})
 	}
-
-	log.Printf("%+v", recipe_data)
 
 	// Если не введено название рецепта
 	if len(recipe_data.Name) == 0 {
@@ -155,7 +149,7 @@ func (server *Server) GetMyRecipeHandle(c echo.Context) error {
 
 	// Проверка на то, что текущий пользователь - автор рецепта
 	if user.ID != recipe.IntUserId {
-		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Рецепт принадлежит другому пользователю"})
 	}
 
 	return c.JSON(http.StatusOK, recipe)
@@ -403,7 +397,7 @@ func (server *Server) UploadRecipeCoverHandle(c echo.Context) error {
 	// Сохраняем файл
 	filename, err := server.SaveFileWithExt(src, fileExt)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить сохранить файл: %s", err.Error())})
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: fmt.Sprintf("Не удалось сохранить файл: %s", err.Error())})
 	}
 
 	// Сохраняем обложку рецепта
@@ -412,7 +406,7 @@ func (server *Server) UploadRecipeCoverHandle(c echo.Context) error {
 	// Обновляем данные о рецепте
 	err = server.DB.Save(&recipe).Error
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить обновить рецепт: %s", err.Error())})
+		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: fmt.Sprintf("Не удалось обновить рецепт: %s", err.Error())})
 	}
 
 	return c.JSON(http.StatusOK, &CoverResponse{Message: "Ок", Cover: filename})

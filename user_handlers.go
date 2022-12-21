@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -71,8 +70,6 @@ func (server *Server) SignUpHandle(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить данные от пользователя: %s", err.Error())})
 	}
-
-	log.Printf("%+v", user_data)
 
 	// Если введен пустой логин
 	if len(user_data.Login) == 0 {
@@ -143,8 +140,6 @@ func (server *Server) SignInHandle(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить данные от пользователя: %s", err.Error())})
 	}
 
-	log.Printf("%+v", user_data)
-
 	// Если введен пустой логин
 	if len(user_data.Login) == 0 {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Имя пользователя не может быть пустым"})
@@ -155,12 +150,9 @@ func (server *Server) SignInHandle(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Пароль пользователя не может быть пустым"})
 	}
 
-	log.Printf("user = %+v", user_data)
-
 	// Берём информацию о пользователе по логину
 	var user models.User
 	err = server.DB.First(&user, "str_user_name = ?", user_data.Login).Error
-	log.Println(err)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Пользователь не найден"})
 	}
@@ -274,10 +266,8 @@ func (server *Server) ChangeProfileHandle(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить данные от пользователя: %s", err.Error())})
 	}
 
-	log.Printf("%+v", user_data)
-
 	// Если пользователь ничего не меняет
-	if len(user_data.Login) != 0 && len(user_data.Email) != 0 && len(user_data.OldPassword) == 0 {
+	if len(user_data.Login) == 0 && len(user_data.Email) == 0 && len(user_data.OldPassword) == 0 && len(user_data.Password) == 0 && len(user_data.ConfirmPassword) == 0 {
 		return c.JSON(http.StatusOK, &DefaultResponse{Message: "Нечего изменять"})
 	}
 
