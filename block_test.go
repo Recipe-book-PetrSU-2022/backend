@@ -5,73 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 
-	"github.com/Recipe-book-PetrSU-2022/backend/claims"
 	"github.com/Recipe-book-PetrSU-2022/backend/models"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
 	"github.com/stretchr/testify/assert"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
-
-var (
-	e          = echo.New()
-	testServer = Server{
-		E:    e,
-		Host: "0.0.0.0",
-		Port: 11111,
-		// DBConnectionInfo: "file::memory:/test?cache=shared", // БД в оперативке
-		TokenKey:    []byte("test"),
-		UploadsPath: "/tmp/test/recipe_book_uploads",
-	}
-	userJWT       = ""
-	userJWT2      = ""
-	jwtMiddleware echo.MiddlewareFunc
-)
-
-func TestMain(m *testing.M) {
-	// err := testServer.ConnectDB()
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	testServer.DB = db
-
-	config := middleware.JWTConfig{
-		Claims:     &claims.UserClaims{},
-		SigningKey: testServer.TokenKey,
-	}
-	jwtMiddleware = middleware.JWTWithConfig(config)
-	e.Use(jwtMiddleware)
-
-	err = testServer.DB.AutoMigrate(
-		&models.User{},
-		&models.Filter{},
-		&models.Ingredient{},
-		&models.Recipe{},
-		&models.Stage{},
-		&models.Comment{},
-		&models.Photo{},
-		&models.RecipeIngredient{},
-	)
-	if err != nil {
-		panic(err)
-	}
-
-	os.Exit(m.Run())
-}
 
 func TestSignupWithoutLogin(t *testing.T) {
 
@@ -87,9 +27,9 @@ func TestSignupWithoutLogin(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, testServer.SignUpHandle(c)) {
+	if assert.NoError(t, TestServer.SignUpHandle(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -115,9 +55,9 @@ func TestSignupWithoutEmail(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, testServer.SignUpHandle(c)) {
+	if assert.NoError(t, TestServer.SignUpHandle(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -144,9 +84,9 @@ func TestSignupWithoutPassword(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, testServer.SignUpHandle(c)) {
+	if assert.NoError(t, TestServer.SignUpHandle(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -174,9 +114,9 @@ func TestSignupWithoutConfirmPassword(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, testServer.SignUpHandle(c)) {
+	if assert.NoError(t, TestServer.SignUpHandle(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -204,9 +144,9 @@ func TestSignup(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, testServer.SignUpHandle(c)) {
+	if assert.NoError(t, TestServer.SignUpHandle(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -234,9 +174,9 @@ func TestSignup2(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, testServer.SignUpHandle(c)) {
+	if assert.NoError(t, TestServer.SignUpHandle(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -264,9 +204,9 @@ func TestSignupUserExists(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, testServer.SignUpHandle(c)) {
+	if assert.NoError(t, TestServer.SignUpHandle(c)) {
 		assert.Equal(t, http.StatusInternalServerError, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -291,9 +231,9 @@ func TestSigninWithoutLogin(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, testServer.SignInHandle(c)) {
+	if assert.NoError(t, TestServer.SignInHandle(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -319,9 +259,9 @@ func TestSigninWithoutPassword(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, testServer.SignInHandle(c)) {
+	if assert.NoError(t, TestServer.SignInHandle(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -347,9 +287,9 @@ func TestSignin(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, testServer.SignInHandle(c)) {
+	if assert.NoError(t, TestServer.SignInHandle(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := TokenResponse{}
@@ -358,7 +298,7 @@ func TestSignin(t *testing.T) {
 
 		assert.Equal(t, "Пользователь успешно вошёл в систему!", respJson.Message)
 		assert.NotEmpty(t, respJson.Token)
-		userJWT = respJson.Token
+		UserJWT = respJson.Token
 	}
 }
 
@@ -377,9 +317,9 @@ func TestSignin2(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, testServer.SignInHandle(c)) {
+	if assert.NoError(t, TestServer.SignInHandle(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := TokenResponse{}
@@ -388,7 +328,7 @@ func TestSignin2(t *testing.T) {
 
 		assert.Equal(t, "Пользователь успешно вошёл в систему!", respJson.Message)
 		assert.NotEmpty(t, respJson.Token)
-		userJWT2 = respJson.Token
+		UserJWT2 = respJson.Token
 	}
 }
 
@@ -407,9 +347,9 @@ func TestSigninWithNotExistsUser(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, testServer.SignInHandle(c)) {
+	if assert.NoError(t, TestServer.SignInHandle(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code) // так-то тут должен быть  http.StatusUnauthorized
 
 		respJson := DefaultResponse{}
@@ -435,9 +375,9 @@ func TestSigninWithWrongPassword(t *testing.T) {
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, testServer.SignInHandle(c)) {
+	if assert.NoError(t, TestServer.SignInHandle(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code) // так-то тут должен быть  http.StatusUnauthorized
 
 		respJson := DefaultResponse{}
@@ -461,13 +401,13 @@ func TestProfile(t *testing.T) {
 		http.MethodPost, "/profile/", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, jwtMiddleware(testServer.ProfileHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.ProfileHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := models.User{}
@@ -491,13 +431,13 @@ func TestChangeUserInfoNothing(t *testing.T) {
 		http.MethodPost, "/profile/update", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, jwtMiddleware(testServer.ChangeProfileHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.ChangeProfileHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -519,13 +459,13 @@ func TestChangeUserInfoEmail(t *testing.T) {
 		http.MethodPost, "/profile/update", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, jwtMiddleware(testServer.ChangeProfileHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.ChangeProfileHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -535,7 +475,7 @@ func TestChangeUserInfoEmail(t *testing.T) {
 		assert.Equal(t, "Пользователь успешно изменил свои данные!", respJson.Message)
 
 		var user models.User
-		testServer.DB.First(&user, "id = ?", 1)
+		TestServer.DB.First(&user, "id = ?", 1)
 		assert.Equal(t, "new_email@a.ru", user.StrUserEmail)
 	}
 }
@@ -551,13 +491,13 @@ func TestChangeUserInfoWithoutOldPassword(t *testing.T) {
 		http.MethodPost, "/profile/update", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, jwtMiddleware(testServer.ChangeProfileHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.ChangeProfileHandle)(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -581,13 +521,13 @@ func TestChangeUserInfoWithWrongConfirmPassword(t *testing.T) {
 		http.MethodPost, "/profile/update", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, jwtMiddleware(testServer.ChangeProfileHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.ChangeProfileHandle)(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -611,13 +551,13 @@ func TestChangeUserInfoWithWrongOldPassword(t *testing.T) {
 		http.MethodPost, "/profile/update", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, jwtMiddleware(testServer.ChangeProfileHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.ChangeProfileHandle)(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -641,13 +581,13 @@ func TestChangeUserInfoPassword(t *testing.T) {
 		http.MethodPost, "/profile/update", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, jwtMiddleware(testServer.ChangeProfileHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.ChangeProfileHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -671,13 +611,13 @@ func TestCreateEmptyRecipe(t *testing.T) {
 		http.MethodPost, "/recipe/add", strings.NewReader(string(reqJson)),
 	)
 	// req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, jwtMiddleware(testServer.CreateEmptyRecipeHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.CreateEmptyRecipeHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := RecipeResponse{}
@@ -686,7 +626,7 @@ func TestCreateEmptyRecipe(t *testing.T) {
 		id := respJson.Id
 
 		var recipe models.Recipe
-		err = testServer.DB.First(&recipe, "id = ?", id).Error
+		err = TestServer.DB.First(&recipe, "id = ?", id).Error
 		assert.Nil(t, err)
 
 		assert.Equal(t, "Создан новый рецепт", respJson.Message)
@@ -706,16 +646,16 @@ func TestUpdateNotExistsRecipe(t *testing.T) {
 		http.MethodPost, "/my-recipe/complete/1000", strings.NewReader(string(reqJson)),
 	)
 	// req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/my-recipe/complete/1000")
 	c.SetParamNames("id")
 	c.SetParamValues("1000")
 
-	if assert.NoError(t, jwtMiddleware(testServer.UpdateRecipeHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.UpdateRecipeHandle)(c)) {
 		assert.Equal(t, http.StatusInternalServerError, rec.Code)
 
 		respJson := RecipeResponse{}
@@ -736,16 +676,16 @@ func TestUpdateRecipeWithoutName(t *testing.T) {
 		http.MethodPost, "/recipe/complete/1", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/my-recipe/complete/1")
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.UpdateRecipeHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.UpdateRecipeHandle)(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 		respJson := RecipeResponse{}
@@ -766,16 +706,16 @@ func TestUpdateRecipe(t *testing.T) {
 		http.MethodPost, "/recipe/add", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/my-recipe/complete/1")
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.UpdateRecipeHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.UpdateRecipeHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := RecipeResponse{}
@@ -784,7 +724,7 @@ func TestUpdateRecipe(t *testing.T) {
 		id := 1
 
 		var recipe models.Recipe
-		err = testServer.DB.First(&recipe, "id = ?", id).Error
+		err = TestServer.DB.First(&recipe, "id = ?", id).Error
 		assert.Equal(t, "b", recipe.StrRecipeName)
 
 		assert.Equal(t, "Рецепт обновлен", respJson.Message)
@@ -802,16 +742,16 @@ func TestUpdateRecipeByAnother(t *testing.T) {
 		http.MethodPost, "/recipe/add", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT2))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/my-recipe/complete/1")
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.UpdateRecipeHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.UpdateRecipeHandle)(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 		respJson := RecipeResponse{}
@@ -832,16 +772,16 @@ func TestGetNotExistsRecipe(t *testing.T) {
 		http.MethodGet, "/recipe/1000", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1000")
 	c.SetParamNames("id")
 	c.SetParamValues("1000")
 
-	if assert.NoError(t, jwtMiddleware(testServer.GetRecipeHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.GetRecipeHandle)(c)) {
 		assert.Equal(t, http.StatusInternalServerError, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -863,16 +803,16 @@ func TestChangeVisibilitySetVisibleRecipe(t *testing.T) {
 		http.MethodGet, "/visible/1", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1")
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.ChangeVisibilityRecipeHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.ChangeVisibilityRecipeHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -894,16 +834,16 @@ func TestChangeVisibilitySetInvisibleRecipe(t *testing.T) {
 		http.MethodGet, "/visible/1", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1")
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.ChangeVisibilityRecipeHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.ChangeVisibilityRecipeHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -925,16 +865,16 @@ func TestGetHiddenRecipe(t *testing.T) {
 		http.MethodGet, "/recipe/1", strings.NewReader(string(reqJson)),
 	)
 	// req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1")
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.GetRecipeHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.GetRecipeHandle)(c)) {
 		assert.Equal(t, http.StatusInternalServerError, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -960,23 +900,23 @@ func TestGetRecipe(t *testing.T) {
 		http.MethodGet, "/recipe/1", strings.NewReader(string(reqJson)),
 	)
 	// req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1")
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.GetRecipeHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.GetRecipeHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := models.Recipe{}
 		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
 		assert.Nil(t, err)
 		var recipe models.Recipe
-		err = testServer.DB.First(&recipe, "id = ?", 1).Error
+		err = TestServer.DB.First(&recipe, "id = ?", 1).Error
 		assert.Nil(t, err)
 
 		assert.Equal(t, recipe.ID, respJson.ID)
@@ -995,16 +935,16 @@ func TestGetPersonalNotExistsRecipe(t *testing.T) {
 		http.MethodGet, "/recipe/1000", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1000")
 	c.SetParamNames("id")
 	c.SetParamValues("1000")
 
-	if assert.NoError(t, jwtMiddleware(testServer.GetMyRecipeHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.GetMyRecipeHandle)(c)) {
 		assert.Equal(t, http.StatusInternalServerError, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1025,16 +965,16 @@ func TestGetPersonalRecipeByAnother(t *testing.T) {
 		http.MethodGet, "/recipe/1", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT2))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1")
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.GetMyRecipeHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.GetMyRecipeHandle)(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1056,23 +996,23 @@ func TestGetPersonalRecipe(t *testing.T) {
 		http.MethodGet, "/recipe/1", strings.NewReader(string(reqJson)),
 	)
 	// req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1")
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.GetMyRecipeHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.GetMyRecipeHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := models.Recipe{}
 		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
 		assert.Nil(t, err)
 		var recipe models.Recipe
-		err = testServer.DB.First(&recipe, "id = ?", 1).Error
+		err = TestServer.DB.First(&recipe, "id = ?", 1).Error
 		assert.Nil(t, err)
 
 		assert.Equal(t, recipe.ID, respJson.ID)
@@ -1091,20 +1031,20 @@ func TestGetAllRecipies(t *testing.T) {
 		http.MethodGet, "/recipe/all", strings.NewReader(string(reqJson)),
 	)
 	// req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, jwtMiddleware(testServer.GetRecipesHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.GetRecipesHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := []models.Recipe{}
 		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
 		assert.Nil(t, err)
 		var recipies []models.Recipe
-		err = testServer.DB.Find(&recipies).Error
+		err = TestServer.DB.Find(&recipies).Error
 		assert.Nil(t, err)
 
 		assert.Equal(t, recipies[0].ID, respJson[0].ID)
@@ -1122,20 +1062,20 @@ func TestGetAllPersonalRecipies(t *testing.T) {
 	req := httptest.NewRequest(
 		http.MethodGet, "/my-recipe/all", strings.NewReader(string(reqJson)),
 	)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, jwtMiddleware(testServer.GetMyRecipesHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.GetMyRecipesHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := []models.Recipe{}
 		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
 		assert.Nil(t, err)
 		var recipies []models.Recipe
-		err = testServer.DB.Find(&recipies, "int_user_id = ?", 1).Error
+		err = TestServer.DB.Find(&recipies, "int_user_id = ?", 1).Error
 		assert.Nil(t, err)
 
 		assert.Equal(t, recipies[0].ID, respJson[0].ID)
@@ -1153,16 +1093,16 @@ func TestDeleteNotExistsRecipe(t *testing.T) {
 	req := httptest.NewRequest(
 		http.MethodGet, "/my-recipe/delete/100", strings.NewReader(string(reqJson)),
 	)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/my-recipe/delete/100")
 	c.SetParamNames("id")
 	c.SetParamValues("100")
 
-	if assert.NoError(t, jwtMiddleware(testServer.DeleteRecipeHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.DeleteRecipeHandle)(c)) {
 		assert.Equal(t, http.StatusInternalServerError, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1182,16 +1122,16 @@ func TestDeleteRecipeByAnother(t *testing.T) {
 	req := httptest.NewRequest(
 		http.MethodGet, "/my-recipe/delete/1", strings.NewReader(string(reqJson)),
 	)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT2))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/my-recipe/delete/1")
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.DeleteRecipeHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.DeleteRecipeHandle)(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1212,13 +1152,13 @@ func TestFindRecipeByEmptySearch(t *testing.T) {
 		http.MethodGet, "/recipe/find", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, jwtMiddleware(testServer.FindRecipesHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.FindRecipesHandle)(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1240,13 +1180,13 @@ func TestFindRecipeByWeirdSearch(t *testing.T) {
 		http.MethodGet, "/recipe/find", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, jwtMiddleware(testServer.FindRecipesHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.FindRecipesHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := []models.Recipe{}
@@ -1268,13 +1208,13 @@ func TestFindRecipe(t *testing.T) {
 		http.MethodGet, "/recipe/find", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, jwtMiddleware(testServer.FindRecipesHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.FindRecipesHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := []models.Recipe{}
@@ -1296,16 +1236,16 @@ func TestAddNotExistsRecipeToFavorites(t *testing.T) {
 		http.MethodGet, "/recipe/favorite/100", strings.NewReader(string(reqJson)),
 	)
 	// req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/my-recipe/favorite/100")
 	c.SetParamNames("id")
 	c.SetParamValues("100")
 
-	if assert.NoError(t, jwtMiddleware(testServer.AddRecipeToFavoritesHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.AddRecipeToFavoritesHandle)(c)) {
 		assert.Equal(t, http.StatusInternalServerError, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1327,16 +1267,16 @@ func TestAddRecipeToFavorites(t *testing.T) {
 		http.MethodGet, "/recipe/favorite/1", strings.NewReader(string(reqJson)),
 	)
 	// req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/my-recipe/favorite/1")
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.AddRecipeToFavoritesHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.AddRecipeToFavoritesHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1358,16 +1298,16 @@ func TestChangeVisibilitySetInvisibleRecipeByAnother(t *testing.T) {
 		http.MethodGet, "/visible/1", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT2))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1")
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.ChangeVisibilityRecipeHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.ChangeVisibilityRecipeHandle)(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1389,16 +1329,16 @@ func TestGetNotExistsComment(t *testing.T) {
 		http.MethodGet, "/recipe/1/comment/1", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT2))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1/comment/1")
 	c.SetParamNames("recipe_id", "comment_id")
 	c.SetParamValues("1", "1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.GetCommentHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.GetCommentHandle)(c)) {
 		assert.Equal(t, http.StatusNotFound, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1421,16 +1361,16 @@ func TestCreateCommentWithNegativeRate(t *testing.T) {
 		http.MethodGet, "/recipe/1/comment/1", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT2))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1/comment/add")
 	c.SetParamNames("recipe_id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.CreateCommentHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.CreateCommentHandle)(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1453,16 +1393,16 @@ func TestCreateCommentWithBiggerRate(t *testing.T) {
 		http.MethodGet, "/recipe/1/comment/1", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT2))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1/comment/add")
 	c.SetParamNames("recipe_id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.CreateCommentHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.CreateCommentHandle)(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1485,16 +1425,16 @@ func TestCreateCommentByAuthor(t *testing.T) {
 		http.MethodGet, "/recipe/1/comment/1", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1/comment/add")
 	c.SetParamNames("recipe_id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.CreateCommentHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.CreateCommentHandle)(c)) {
 		assert.Equal(t, http.StatusBadRequest, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1517,16 +1457,16 @@ func TestCreateComment(t *testing.T) {
 		http.MethodGet, "/recipe/1/comment/1", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT2))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1/comment/add")
 	c.SetParamNames("recipe_id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.CreateCommentHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.CreateCommentHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1548,16 +1488,16 @@ func TestGetComment(t *testing.T) {
 		http.MethodGet, "/recipe/1/comment/1", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT2))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1/comment/1")
 	c.SetParamNames("recipe_id", "comment_id")
 	c.SetParamValues("1", "1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.GetCommentHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.GetCommentHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := models.Comment{}
@@ -1579,16 +1519,16 @@ func TestGetAllCommentFromRecipe(t *testing.T) {
 		http.MethodGet, "/recipe/1/comments", strings.NewReader(string(reqJson)),
 	)
 	// req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT2))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1/comments")
 	c.SetParamNames("recipe_id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.GetCommentsHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.GetCommentsHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := []models.Comment{}
@@ -1610,16 +1550,16 @@ func TestDeleteNotExistsComment(t *testing.T) {
 		http.MethodGet, "/recipe/1/comment/100/delete", strings.NewReader(string(reqJson)),
 	)
 	// req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT2))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1/comment/100/delete")
 	c.SetParamNames("recipe_id", "comment_id")
 	c.SetParamValues("1", "100")
 
-	if assert.NoError(t, jwtMiddleware(testServer.DeleteCommentHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.DeleteCommentHandle)(c)) {
 		assert.Equal(t, http.StatusNotFound, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1641,16 +1581,16 @@ func TestDeleteComment(t *testing.T) {
 		http.MethodGet, "/recipe/1/comment/1/delete", strings.NewReader(string(reqJson)),
 	)
 	// req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT2))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1/comment/1/delete")
 	c.SetParamNames("recipe_id", "comment_id")
 	c.SetParamValues("1", "1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.DeleteCommentHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.DeleteCommentHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1676,16 +1616,16 @@ func TestCreateIngredient(t *testing.T) {
 		http.MethodPost, "/ingredient/create", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	// c.SetPath("/recipe/1/ingredient/add")
 	// c.SetParamNames("recipe_id")
 	// c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.NewIngredient)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.NewIngredient)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1707,16 +1647,16 @@ func TestCreateStage(t *testing.T) {
 		http.MethodPost, "/recipe/1/stage/add", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1/stage/add")
 	c.SetParamNames("recipe_id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.CreateStageHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.CreateStageHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := StageResponse{}
@@ -1738,16 +1678,16 @@ func TestUpdateStage(t *testing.T) {
 		http.MethodPost, "/recipe/1/stage/1/update", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1/stage/1/update")
 	c.SetParamNames("recipe_id", "stage_id")
 	c.SetParamValues("1", "1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.UpdateStageHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.UpdateStageHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := StageResponse{}
@@ -1767,16 +1707,16 @@ func TestDeleteStage(t *testing.T) {
 		http.MethodPost, "/recipe/1/stage/1/delete", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/recipe/1/stage/1/delete")
 	c.SetParamNames("recipe_id", "stage_id")
 	c.SetParamValues("1", "1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.DeleteStageHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.DeleteStageHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := StageResponse{}
@@ -1798,16 +1738,16 @@ func TestDownloadFile(t *testing.T) {
 		http.MethodPost, "/assets/a.hehe", strings.NewReader(string(reqJson)),
 	)
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/assets/a.hehe")
 	c.SetParamNames("filename")
 	c.SetParamValues("a.hehe")
 
-	if assert.NoError(t, jwtMiddleware(testServer.DownloadFile)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.DownloadFile)(c)) {
 		assert.Equal(t, http.StatusNotFound, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1828,16 +1768,16 @@ func TestDeleteRecipe(t *testing.T) {
 	req := httptest.NewRequest(
 		http.MethodGet, "/my-recipe/delete/1", strings.NewReader(string(reqJson)),
 	)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 	c.SetPath("/my-recipe/delete/1")
 	c.SetParamNames("id")
 	c.SetParamValues("1")
 
-	if assert.NoError(t, jwtMiddleware(testServer.DeleteRecipeHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.DeleteRecipeHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1846,7 +1786,7 @@ func TestDeleteRecipe(t *testing.T) {
 		assert.Equal(t, "Рецепт удален", respJson.Message)
 
 		var recipe models.Recipe
-		testServer.DB.First(&recipe, "id = ?", 1)
+		TestServer.DB.First(&recipe, "id = ?", 1)
 		assert.NotEqual(t, "", recipe.DeletedAt)
 	}
 }
@@ -1864,13 +1804,13 @@ func TestDeleteUser(t *testing.T) {
 		http.MethodPost, "/profile/delete", strings.NewReader(string(reqJson)),
 	)
 	// req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", UserJWT2))
 
 	rec := httptest.NewRecorder()
 
-	c := e.NewContext(req, rec)
+	c := TestE.NewContext(req, rec)
 
-	if assert.NoError(t, jwtMiddleware(testServer.DeleteProfileHandle)(c)) {
+	if assert.NoError(t, TestJwtMiddleware(TestServer.DeleteProfileHandle)(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		respJson := DefaultResponse{}
@@ -1880,7 +1820,7 @@ func TestDeleteUser(t *testing.T) {
 		assert.Equal(t, "Пользователь успешно удалён!", respJson.Message)
 
 		var user models.User
-		testServer.DB.First(&user, "id = ?", 1)
+		TestServer.DB.First(&user, "id = ?", 1)
 		assert.NotEqual(t, "", user.DeletedAt)
 	}
 }
