@@ -46,7 +46,7 @@ func (server *Server) NewIngredient(c echo.Context) error {
 		IntCarbohydrates:  ingredient_data.Carbohydrates,
 	}
 
-	err = server.DB.Create(ingredient).Error
+	err = server.DB.Create(&ingredient).Error
 	if err != nil {
 		log.Print(err)
 		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось создать ингредиент"})

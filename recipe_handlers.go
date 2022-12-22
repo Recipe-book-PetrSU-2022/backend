@@ -298,9 +298,9 @@ func (server *Server) AddRecipeToFavoritesHandle(c echo.Context) error {
 	return c.JSON(http.StatusOK, &DefaultResponse{Message: "Ок"})
 }
 
-func (server *Server) RemoveRecipeFromFavoritesHandle(c echo.Context) error {
-	return nil
-}
+// func (server *Server) RemoveRecipeFromFavoritesHandle(c echo.Context) error {
+// 	return nil
+// }
 
 func (server *Server) ChangeVisibilityRecipeHandle(c echo.Context) error {
 	// Получаем информацию о пользователе
@@ -335,8 +335,6 @@ func (server *Server) ChangeVisibilityRecipeHandle(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить данные от пользователя: %s", err.Error())})
 	}
 
-	log.Printf("visibility = %+v", visibility)
-
 	// Сохраняем значение видимости
 	recipe.BoolRecipeVisibility = visibility.Visible
 
@@ -349,69 +347,69 @@ func (server *Server) ChangeVisibilityRecipeHandle(c echo.Context) error {
 	return c.JSON(http.StatusOK, &DefaultResponse{Message: "Рецепт обновлен"})
 }
 
-func (server *Server) UploadRecipeCoverHandle(c echo.Context) error {
-	// Получаем информацию о пользователе
-	user, err := server.GetUserByClaims(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Не удалось найти пользователя"})
-	}
+// func (server *Server) UploadRecipeCoverHandle(c echo.Context) error {
+// 	// Получаем информацию о пользователе
+// 	user, err := server.GetUserByClaims(c)
+// 	if err != nil {
+// 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Не удалось найти пользователя"})
+// 	}
 
-	// Получаем ID рецепта с фронтэнда
-	recipeID, err := strconv.Atoi(c.Param("id"))
-	if err != nil {
-		log.Printf("Recipe id: %s", err.Error())
-		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Неверный id рецепта"})
-	}
+// 	// Получаем ID рецепта с фронтэнда
+// 	recipeID, err := strconv.Atoi(c.Param("id"))
+// 	if err != nil {
+// 		log.Printf("Recipe id: %s", err.Error())
+// 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Неверный id рецепта"})
+// 	}
 
-	// Получаем информацию о рецепте
-	recipe, err := server.GetRecipeById(recipeID)
-	if err != nil {
-		log.Printf("Get recipe by id: %s", err.Error())
-		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
-	}
+// 	// Получаем информацию о рецепте
+// 	recipe, err := server.GetRecipeById(recipeID)
+// 	if err != nil {
+// 		log.Printf("Get recipe by id: %s", err.Error())
+// 		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти рецепт"})
+// 	}
 
-	// Проверка на то, что текущий пользователь - автор рецепта
-	if user.ID != recipe.IntUserId {
-		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Рецепт принадлежит другому пользователю"})
-	}
+// 	// Проверка на то, что текущий пользователь - автор рецепта
+// 	if user.ID != recipe.IntUserId {
+// 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Рецепт принадлежит другому пользователю"})
+// 	}
 
-	// Получаем файл из формы
-	file, err := c.FormFile("file")
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить файл из формы: %s", err.Error())})
-	}
+// 	// Получаем файл из формы
+// 	file, err := c.FormFile("file")
+// 	if err != nil {
+// 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить файл из формы: %s", err.Error())})
+// 	}
 
-	// Получаем расширение файла
-	fileExt, err := server.GetFileExtByMimetype(file)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось определить тип файла: %s", err.Error())})
-	}
+// 	// Получаем расширение файла
+// 	fileExt, err := server.GetFileExtByMimetype(file)
+// 	if err != nil {
+// 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось определить тип файла: %s", err.Error())})
+// 	}
 
-	// Пытаемся открыть файл
-	src, err := file.Open()
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось прочитать файл: %s", err.Error())})
-	}
-	defer src.Close()
+// 	// Пытаемся открыть файл
+// 	src, err := file.Open()
+// 	if err != nil {
+// 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось прочитать файл: %s", err.Error())})
+// 	}
+// 	defer src.Close()
 
-	// Сохраняем файл
-	filename, err := server.SaveFileWithExt(src, fileExt)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: fmt.Sprintf("Не удалось сохранить файл: %s", err.Error())})
-	}
+// 	// Сохраняем файл
+// 	filename, err := server.SaveFileWithExt(src, fileExt)
+// 	if err != nil {
+// 		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: fmt.Sprintf("Не удалось сохранить файл: %s", err.Error())})
+// 	}
 
-	// Сохраняем обложку рецепта
-	recipe.StrRecipeImage = filename
+// 	// Сохраняем обложку рецепта
+// 	recipe.StrRecipeImage = filename
 
-	// Обновляем данные о рецепте
-	err = server.DB.Save(&recipe).Error
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: fmt.Sprintf("Не удалось обновить рецепт: %s", err.Error())})
-	}
+// 	// Обновляем данные о рецепте
+// 	err = server.DB.Save(&recipe).Error
+// 	if err != nil {
+// 		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: fmt.Sprintf("Не удалось обновить рецепт: %s", err.Error())})
+// 	}
 
-	return c.JSON(http.StatusOK, &CoverResponse{Message: "Ок", Cover: filename})
+// 	return c.JSON(http.StatusOK, &CoverResponse{Message: "Ок", Cover: filename})
 
-}
+// }
 
 type RecipeIngredientInfo struct {
 	IngredientId int `json:"ingredient_id"`

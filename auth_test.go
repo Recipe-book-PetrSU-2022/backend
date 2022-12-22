@@ -448,6 +448,36 @@ func TestSigninWithWrongPassword(t *testing.T) {
 	}
 }
 
+func TestProfile(t *testing.T) {
+
+	reqMap := map[string]interface{}{
+		"login":        "",
+		"email":        "",
+		"old_password": "",
+	}
+	reqJson, _ := json.Marshal(reqMap)
+
+	req := httptest.NewRequest(
+		http.MethodPost, "/profile/", strings.NewReader(string(reqJson)),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+
+	rec := httptest.NewRecorder()
+
+	c := e.NewContext(req, rec)
+
+	if assert.NoError(t, jwtMiddleware(testServer.ProfileHandle)(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		respJson := models.User{}
+		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
+		assert.Nil(t, err)
+
+		assert.Equal(t, uint(1), respJson.ID)
+	}
+}
+
 func TestChangeUserInfoNothing(t *testing.T) {
 
 	reqMap := map[string]interface{}{
@@ -1345,6 +1375,446 @@ func TestChangeVisibilitySetInvisibleRecipeByAnother(t *testing.T) {
 		assert.Nil(t, err)
 
 		assert.Equal(t, "Рецепт принадлежит другому пользователю", respJson.Message)
+	}
+}
+
+func TestGetNotExistsComment(t *testing.T) {
+
+	reqMap := map[string]interface{}{
+		"visible": false,
+	}
+	reqJson, _ := json.Marshal(reqMap)
+
+	req := httptest.NewRequest(
+		http.MethodGet, "/recipe/1/comment/1", strings.NewReader(string(reqJson)),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+
+	rec := httptest.NewRecorder()
+
+	c := e.NewContext(req, rec)
+	c.SetPath("/recipe/1/comment/1")
+	c.SetParamNames("recipe_id", "comment_id")
+	c.SetParamValues("1", "1")
+
+	if assert.NoError(t, jwtMiddleware(testServer.GetCommentHandle)(c)) {
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+
+		respJson := DefaultResponse{}
+		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
+		assert.Nil(t, err)
+
+		assert.Equal(t, "Комментарий не найден", respJson.Message)
+	}
+}
+
+func TestCreateCommentWithNegativeRate(t *testing.T) {
+
+	reqMap := map[string]interface{}{
+		"text": "",
+		"rate": -1,
+	}
+	reqJson, _ := json.Marshal(reqMap)
+
+	req := httptest.NewRequest(
+		http.MethodGet, "/recipe/1/comment/1", strings.NewReader(string(reqJson)),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+
+	rec := httptest.NewRecorder()
+
+	c := e.NewContext(req, rec)
+	c.SetPath("/recipe/1/comment/add")
+	c.SetParamNames("recipe_id")
+	c.SetParamValues("1")
+
+	if assert.NoError(t, jwtMiddleware(testServer.CreateCommentHandle)(c)) {
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+		respJson := DefaultResponse{}
+		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
+		assert.Nil(t, err)
+
+		assert.Equal(t, "Оценка пользователя должна быть от 0 до 5", respJson.Message)
+	}
+}
+
+func TestCreateCommentWithBiggerRate(t *testing.T) {
+
+	reqMap := map[string]interface{}{
+		"text": "",
+		"rate": 6,
+	}
+	reqJson, _ := json.Marshal(reqMap)
+
+	req := httptest.NewRequest(
+		http.MethodGet, "/recipe/1/comment/1", strings.NewReader(string(reqJson)),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+
+	rec := httptest.NewRecorder()
+
+	c := e.NewContext(req, rec)
+	c.SetPath("/recipe/1/comment/add")
+	c.SetParamNames("recipe_id")
+	c.SetParamValues("1")
+
+	if assert.NoError(t, jwtMiddleware(testServer.CreateCommentHandle)(c)) {
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+		respJson := DefaultResponse{}
+		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
+		assert.Nil(t, err)
+
+		assert.Equal(t, "Оценка пользователя должна быть от 0 до 5", respJson.Message)
+	}
+}
+
+func TestCreateCommentByAuthor(t *testing.T) {
+
+	reqMap := map[string]interface{}{
+		"text": "",
+		"rate": 3,
+	}
+	reqJson, _ := json.Marshal(reqMap)
+
+	req := httptest.NewRequest(
+		http.MethodGet, "/recipe/1/comment/1", strings.NewReader(string(reqJson)),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+
+	rec := httptest.NewRecorder()
+
+	c := e.NewContext(req, rec)
+	c.SetPath("/recipe/1/comment/add")
+	c.SetParamNames("recipe_id")
+	c.SetParamValues("1")
+
+	if assert.NoError(t, jwtMiddleware(testServer.CreateCommentHandle)(c)) {
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+		respJson := DefaultResponse{}
+		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
+		assert.Nil(t, err)
+
+		assert.Equal(t, "Нельзя оставить отзыв о собственном рецепте", respJson.Message)
+	}
+}
+
+func TestCreateComment(t *testing.T) {
+
+	reqMap := map[string]interface{}{
+		"text": "",
+		"rate": 3,
+	}
+	reqJson, _ := json.Marshal(reqMap)
+
+	req := httptest.NewRequest(
+		http.MethodGet, "/recipe/1/comment/1", strings.NewReader(string(reqJson)),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+
+	rec := httptest.NewRecorder()
+
+	c := e.NewContext(req, rec)
+	c.SetPath("/recipe/1/comment/add")
+	c.SetParamNames("recipe_id")
+	c.SetParamValues("1")
+
+	if assert.NoError(t, jwtMiddleware(testServer.CreateCommentHandle)(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		respJson := DefaultResponse{}
+		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
+		assert.Nil(t, err)
+
+		assert.Equal(t, "Комментарий создан!", respJson.Message)
+	}
+}
+
+func TestGetComment(t *testing.T) {
+
+	reqMap := map[string]interface{}{
+		"visible": false,
+	}
+	reqJson, _ := json.Marshal(reqMap)
+
+	req := httptest.NewRequest(
+		http.MethodGet, "/recipe/1/comment/1", strings.NewReader(string(reqJson)),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+
+	rec := httptest.NewRecorder()
+
+	c := e.NewContext(req, rec)
+	c.SetPath("/recipe/1/comment/1")
+	c.SetParamNames("recipe_id", "comment_id")
+	c.SetParamValues("1", "1")
+
+	if assert.NoError(t, jwtMiddleware(testServer.GetCommentHandle)(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		respJson := models.Comment{}
+		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
+		assert.Nil(t, err)
+
+		assert.Equal(t, uint(1), respJson.ID)
+	}
+}
+
+func TestGetAllCommentFromRecipe(t *testing.T) {
+
+	reqMap := map[string]interface{}{
+		"visible": false,
+	}
+	reqJson, _ := json.Marshal(reqMap)
+
+	req := httptest.NewRequest(
+		http.MethodGet, "/recipe/1/comments", strings.NewReader(string(reqJson)),
+	)
+	// req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+
+	rec := httptest.NewRecorder()
+
+	c := e.NewContext(req, rec)
+	c.SetPath("/recipe/1/comments")
+	c.SetParamNames("recipe_id")
+	c.SetParamValues("1")
+
+	if assert.NoError(t, jwtMiddleware(testServer.GetCommentsHandle)(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		respJson := []models.Comment{}
+		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
+		assert.Nil(t, err)
+
+		assert.Equal(t, 1, len(respJson))
+	}
+}
+
+func TestDeleteNotExistsComment(t *testing.T) {
+
+	reqMap := map[string]interface{}{
+		"visible": false,
+	}
+	reqJson, _ := json.Marshal(reqMap)
+
+	req := httptest.NewRequest(
+		http.MethodGet, "/recipe/1/comment/100/delete", strings.NewReader(string(reqJson)),
+	)
+	// req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+
+	rec := httptest.NewRecorder()
+
+	c := e.NewContext(req, rec)
+	c.SetPath("/recipe/1/comment/100/delete")
+	c.SetParamNames("recipe_id", "comment_id")
+	c.SetParamValues("1", "100")
+
+	if assert.NoError(t, jwtMiddleware(testServer.DeleteCommentHandle)(c)) {
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+
+		respJson := DefaultResponse{}
+		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
+		assert.Nil(t, err)
+
+		assert.Equal(t, "Комментарий не найден", respJson.Message)
+	}
+}
+
+func TestDeleteComment(t *testing.T) {
+
+	reqMap := map[string]interface{}{
+		"visible": false,
+	}
+	reqJson, _ := json.Marshal(reqMap)
+
+	req := httptest.NewRequest(
+		http.MethodGet, "/recipe/1/comment/1/delete", strings.NewReader(string(reqJson)),
+	)
+	// req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT2))
+
+	rec := httptest.NewRecorder()
+
+	c := e.NewContext(req, rec)
+	c.SetPath("/recipe/1/comment/1/delete")
+	c.SetParamNames("recipe_id", "comment_id")
+	c.SetParamValues("1", "1")
+
+	if assert.NoError(t, jwtMiddleware(testServer.DeleteCommentHandle)(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		respJson := DefaultResponse{}
+		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
+		assert.Nil(t, err)
+
+		assert.Equal(t, "Комментарий удален", respJson.Message)
+	}
+}
+
+func TestCreateIngredient(t *testing.T) {
+
+	reqMap := map[string]interface{}{
+		"name":          "a",
+		"calories":      0,
+		"proteins":      0,
+		"fats":          0,
+		"carbohydrates": 0,
+	}
+	reqJson, _ := json.Marshal(reqMap)
+
+	req := httptest.NewRequest(
+		http.MethodPost, "/ingredient/create", strings.NewReader(string(reqJson)),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+
+	rec := httptest.NewRecorder()
+
+	c := e.NewContext(req, rec)
+	// c.SetPath("/recipe/1/ingredient/add")
+	// c.SetParamNames("recipe_id")
+	// c.SetParamValues("1")
+
+	if assert.NoError(t, jwtMiddleware(testServer.NewIngredient)(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		respJson := DefaultResponse{}
+		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
+		assert.Nil(t, err)
+
+		assert.Equal(t, "Ингредиент создан!", respJson.Message)
+	}
+}
+
+func TestCreateStage(t *testing.T) {
+
+	reqMap := map[string]interface{}{
+		"description": "a",
+	}
+	reqJson, _ := json.Marshal(reqMap)
+
+	req := httptest.NewRequest(
+		http.MethodPost, "/recipe/1/stage/add", strings.NewReader(string(reqJson)),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+
+	rec := httptest.NewRecorder()
+
+	c := e.NewContext(req, rec)
+	c.SetPath("/recipe/1/stage/add")
+	c.SetParamNames("recipe_id")
+	c.SetParamValues("1")
+
+	if assert.NoError(t, jwtMiddleware(testServer.CreateStageHandle)(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		respJson := StageResponse{}
+		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
+		assert.Nil(t, err)
+
+		assert.Equal(t, "Создан новый этап", respJson.Message)
+	}
+}
+
+func TestUpdateStage(t *testing.T) {
+
+	reqMap := map[string]interface{}{
+		"description": "aa",
+	}
+	reqJson, _ := json.Marshal(reqMap)
+
+	req := httptest.NewRequest(
+		http.MethodPost, "/recipe/1/stage/1/update", strings.NewReader(string(reqJson)),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+
+	rec := httptest.NewRecorder()
+
+	c := e.NewContext(req, rec)
+	c.SetPath("/recipe/1/stage/1/update")
+	c.SetParamNames("recipe_id", "stage_id")
+	c.SetParamValues("1", "1")
+
+	if assert.NoError(t, jwtMiddleware(testServer.UpdateStageHandle)(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		respJson := StageResponse{}
+		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
+		assert.Nil(t, err)
+
+		assert.Equal(t, "Этап обновлен", respJson.Message)
+	}
+}
+
+func TestDeleteStage(t *testing.T) {
+
+	reqMap := map[string]interface{}{}
+	reqJson, _ := json.Marshal(reqMap)
+
+	req := httptest.NewRequest(
+		http.MethodPost, "/recipe/1/stage/1/delete", strings.NewReader(string(reqJson)),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+
+	rec := httptest.NewRecorder()
+
+	c := e.NewContext(req, rec)
+	c.SetPath("/recipe/1/stage/1/delete")
+	c.SetParamNames("recipe_id", "stage_id")
+	c.SetParamValues("1", "1")
+
+	if assert.NoError(t, jwtMiddleware(testServer.DeleteStageHandle)(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		respJson := StageResponse{}
+		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
+		assert.Nil(t, err)
+
+		assert.Equal(t, "Этап удален", respJson.Message)
+	}
+}
+
+func TestDownloadFile(t *testing.T) {
+
+	reqMap := map[string]interface{}{
+		"description": "a",
+	}
+	reqJson, _ := json.Marshal(reqMap)
+
+	req := httptest.NewRequest(
+		http.MethodPost, "/assets/a.hehe", strings.NewReader(string(reqJson)),
+	)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderAuthorization, fmt.Sprintf("Bearer %s", userJWT))
+
+	rec := httptest.NewRecorder()
+
+	c := e.NewContext(req, rec)
+	c.SetPath("/assets/a.hehe")
+	c.SetParamNames("filename")
+	c.SetParamValues("a.hehe")
+
+	if assert.NoError(t, jwtMiddleware(testServer.DownloadFile)(c)) {
+		assert.Equal(t, http.StatusNotFound, rec.Code)
+
+		respJson := DefaultResponse{}
+		err := json.Unmarshal(rec.Body.Bytes(), &respJson)
+		assert.Nil(t, err)
+
+		assert.Equal(t, "Файл не найден", respJson.Message)
 	}
 }
 

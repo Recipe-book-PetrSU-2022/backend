@@ -96,6 +96,10 @@ func (server *Server) CreateCommentHandle(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить данные от пользователя: %s", err.Error())})
 	}
 
+	if comment_data.Rate < 0 || comment_data.Rate > 5 {
+		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Оценка пользователя должна быть от 0 до 5"})
+	}
+
 	comment := models.Comment{
 		StrCommentDesc:      comment_data.Text,
 		IntRate:             comment_data.Rate,
@@ -128,14 +132,12 @@ func (server *Server) DeleteCommentHandle(c echo.Context) error {
 
 	commentID, err := strconv.Atoi(c.Param("comment_id"))
 	if err != nil {
-		log.Printf("Comment id: %s", err.Error())
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Неверный id комментария"})
 	}
 
 	var comment models.Comment
 	err = server.DB.First(&comment, "int_recipe_id = ? AND int_user_id = ? AND id = ?", recipeID, user.ID, commentID).Error
 	if err != nil {
-		log.Printf("Get comment to delete: %s", err.Error())
 		return c.JSON(http.StatusNotFound, &DefaultResponse{
 			Message: "Комментарий не найден",
 		})
@@ -143,7 +145,6 @@ func (server *Server) DeleteCommentHandle(c echo.Context) error {
 
 	err = server.DB.Delete(&comment).Error
 	if err != nil {
-		log.Printf("Delete: %s", err.Error())
 		return c.JSON(http.StatusInternalServerError, &DefaultResponse{
 			Message: "Не удалось удалить комментарий",
 		})

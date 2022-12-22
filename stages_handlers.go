@@ -120,14 +120,12 @@ func (server *Server) UpdateStageHandle(c echo.Context) error {
 	// Получаем ID рецепта, к которому будет добавлен этап
 	recipeID, err := strconv.Atoi(c.Param("stage_id"))
 	if err != nil {
-		log.Printf("Recipe id: %s", err.Error())
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Неверный id рецепта"})
 	}
 
 	// Получаем информацию об этапе, который будем изменять
 	stage, err := server.GetStageById(recipeID)
 	if err != nil {
-		log.Printf("Get stage by id: %s", err.Error())
 		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти этап"})
 	}
 
@@ -142,8 +140,6 @@ func (server *Server) UpdateStageHandle(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить данные от пользователя: %s", err.Error())})
 	}
-
-	log.Printf("stage data = %+v", stage_data)
 
 	// Обновляем описание этапа
 	stage.StrStageDesc = stage_data.Description
@@ -162,71 +158,71 @@ func (server *Server) UpdateStageHandle(c echo.Context) error {
 }
 
 // Функция для добавления фото к этапу
-func (server *Server) AddStagePhotoHandle(c echo.Context) error {
-	// Получаем информацию о пользователе
-	user, err := server.GetUserByClaims(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Не удалось найти пользователя"})
-	}
+// func (server *Server) AddStagePhotoHandle(c echo.Context) error {
+// 	// Получаем информацию о пользователе
+// 	user, err := server.GetUserByClaims(c)
+// 	if err != nil {
+// 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Не удалось найти пользователя"})
+// 	}
 
-	// Получаем ID рецепта, к которому будет добавлен этап
-	recipeID, err := strconv.Atoi(c.Param("stage_id"))
-	if err != nil {
-		log.Printf("Recipe id: %s", err.Error())
-		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Неверный id рецепта"})
-	}
+// 	// Получаем ID рецепта, к которому будет добавлен этап
+// 	recipeID, err := strconv.Atoi(c.Param("stage_id"))
+// 	if err != nil {
+// 		log.Printf("Recipe id: %s", err.Error())
+// 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Неверный id рецепта"})
+// 	}
 
-	// Получаем информацию об этапе, который будем изменять
-	stage, err := server.GetStageById(recipeID)
-	if err != nil {
-		log.Printf("Get stage by id: %s", err.Error())
-		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти этап"})
-	}
+// 	// Получаем информацию об этапе, который будем изменять
+// 	stage, err := server.GetStageById(recipeID)
+// 	if err != nil {
+// 		log.Printf("Get stage by id: %s", err.Error())
+// 		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: "Не удалось найти этап"})
+// 	}
 
-	// Проверка на то, что текущий пользователь автор рецепта
-	if user.ID != stage.Recipe.IntUserId {
-		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Рецепт принадлежит другому пользователю"})
-	}
+// 	// Проверка на то, что текущий пользователь автор рецепта
+// 	if user.ID != stage.Recipe.IntUserId {
+// 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: "Рецепт принадлежит другому пользователю"})
+// 	}
 
-	// Получаем файл
-	file, err := c.FormFile("file")
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить файл из формы: %s", err.Error())})
-	}
+// 	// Получаем файл
+// 	file, err := c.FormFile("file")
+// 	if err != nil {
+// 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось получить файл из формы: %s", err.Error())})
+// 	}
 
-	// Получаем расширение файла
-	fileExt, err := server.GetFileExtByMimetype(file)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось определить тип файла: %s", err.Error())})
-	}
+// 	// Получаем расширение файла
+// 	fileExt, err := server.GetFileExtByMimetype(file)
+// 	if err != nil {
+// 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось определить тип файла: %s", err.Error())})
+// 	}
 
-	// Пытаемся прочитать файл
-	src, err := file.Open()
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось прочитать файл: %s", err.Error())})
-	}
-	defer src.Close()
+// 	// Пытаемся прочитать файл
+// 	src, err := file.Open()
+// 	if err != nil {
+// 		return c.JSON(http.StatusBadRequest, &DefaultResponse{Message: fmt.Sprintf("Не удалось прочитать файл: %s", err.Error())})
+// 	}
+// 	defer src.Close()
 
-	// Сохраняем файл
-	filename, err := server.SaveFileWithExt(src, fileExt)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: fmt.Sprintf("Не удалось сохранить файл: %s", err.Error())})
-	}
+// 	// Сохраняем файл
+// 	filename, err := server.SaveFileWithExt(src, fileExt)
+// 	if err != nil {
+// 		return c.JSON(http.StatusInternalServerError, &DefaultResponse{Message: fmt.Sprintf("Не удалось сохранить файл: %s", err.Error())})
+// 	}
 
-	// Добавляем имя файла к этапу
-	stage.StagePhotos = append(stage.StagePhotos, models.Photo{
-		StrImage: filename,
-	})
+// 	// Добавляем имя файла к этапу
+// 	stage.StagePhotos = append(stage.StagePhotos, models.Photo{
+// 		StrImage: filename,
+// 	})
 
-	// Обновляем данные об этапе в БД
-	err = server.DB.Save(&stage).Error
-	if err != nil {
-		return c.JSON(
-			http.StatusInternalServerError, &DefaultResponse{
-				Message: "Не удалось обновить этап",
-			},
-		)
-	}
+// 	// Обновляем данные об этапе в БД
+// 	err = server.DB.Save(&stage).Error
+// 	if err != nil {
+// 		return c.JSON(
+// 			http.StatusInternalServerError, &DefaultResponse{
+// 				Message: "Не удалось обновить этап",
+// 			},
+// 		)
+// 	}
 
-	return c.JSON(http.StatusOK, &DefaultResponse{Message: "Этап обновлен"})
-}
+// 	return c.JSON(http.StatusOK, &DefaultResponse{Message: "Этап обновлен"})
+// }

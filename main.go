@@ -105,7 +105,7 @@ func (server *Server) Run() error {
 	user_recipe_group.POST("/visible/:id", server.ChangeVisibilityRecipeHandle)
 	user_recipe_group.POST("/change/:id", server.UpdateRecipeHandle)
 	user_recipe_group.DELETE("/delete/:id", server.DeleteRecipeHandle)
-	user_recipe_group.POST("/upload-cover/:id", server.UploadRecipeCoverHandle)
+	// user_recipe_group.POST("/upload-cover/:id", server.UploadRecipeCoverHandle)
 	user_recipe_group.GET("/:id", server.GetMyRecipeHandle)
 	user_recipe_group.GET("/all", server.GetMyRecipesHandle)
 
@@ -115,7 +115,7 @@ func (server *Server) Run() error {
 	user_recipe_group.DELETE("/:recipe_id/ingredient/delete", server.RemoveIngredientHandle)
 	user_recipe_group.DELETE("/stage/:stage_id/delete", server.DeleteStageHandle)
 	user_recipe_group.POST("/stage/:stage_id/update", server.UpdateStageHandle)
-	user_recipe_group.POST("/stage/:stage_id/upload-photo", server.AddStagePhotoHandle)
+	// user_recipe_group.POST("/stage/:stage_id/upload-photo", server.AddStagePhotoHandle)
 
 	// Эндпоинты для работы с комментариями
 	recipe_group.GET("/:recipe_id/comment/:comment_id", server.GetCommentHandle)
